@@ -1,5 +1,6 @@
 import {
   "CAIMEOX/inrel/dsl/spec" @spec,
+  "moonbitlang/core/cmp" @cmp,
 }
 
 import {
