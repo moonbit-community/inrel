@@ -2,8 +2,8 @@
   "name": "CAIMEOX/inrel",
   "version": "0.1.0",
   "readme": "README.mbt.md",
-  "repository": "",
+  "repository": "https://github.com/moonbit-community/inrel.git",
   "license": "Apache-2.0",
-  "keywords": [],
-  "description": ""
+  "keywords": ["inductive-relation", "dsl", "property-based-testing"],
+  "description": "Generating good generators for QuickCheck using inductive relations"
 }
