@@ -2,7 +2,7 @@
 test "unify state actions mirror figure 2 primitives" {
   let constraints : Map[Int, @unify.Range] = {}
   constraints[0] = @unify.range_fixed()
-  constraints[1] = @unify.range_undef(@spec.type_named("Tree"))
+  constraints[1] = @unify.range_undef(@spec.ty("Tree"))
   let st = @unify.UnifyState::new(constraints, [0, 1])
 
   st.update_constraint(1, @unify.range_link(0))
@@ -10,7 +10,7 @@ test "unify state actions mirror figure 2 primitives" {
   st.record_equality(1, 0)
   st.record_pattern(0, @unify.pattern_ctor("S", [@unify.pattern_var(2)]))
 
-  let fresh = st.fresh_unknown(@spec.type_named("Tree"))
+  let fresh = st.fresh_unknown(@spec.ty("Tree"))
 
   inspect(st.lookup(1), content="Some(Link(0))")
   inspect(st.equality_count(), content="1")

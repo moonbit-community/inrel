@@ -10,7 +10,7 @@ pub enum TypeRef {
 } derive(Eq, Show, ToJson)
 
 ///|
-pub fn type_named(name : String) -> TypeRef {
+pub fn ty(name : String) -> TypeRef {
   TypeRef::Named(name)
 }
 
@@ -32,7 +32,7 @@ pub enum Term {
 } derive(Eq, Show, ToJson)
 
 ///|
-pub fn term_var(name : String) -> Term {
+pub fn v(name : String) -> Term {
   Term::Var(name)
 }
 
@@ -266,9 +266,9 @@ fn ConstructorSpec::render(
   let body = pieces.join(" -> ")
   let binders = self.binders.map(b => b.name).join(" ")
   if binders is "" {
-    " | \{self.name} : \{body}"
+    "| \{self.name} : \{body}"
   } else {
-    " | \{self.name} : forall \{binders}, \{body}"
+    "| \{self.name} : forall \{binders}, \{body}"
   }
 }
 

@@ -2,9 +2,29 @@
 package "CAIMEOX/inrel/dsl/spec"
 
 // Values
+pub fn binder(String, TypeRef) -> BinderSpec
+
+pub fn body(Array[Term], hypotheses? : Array[HypothesisSpec]) -> ConstructorBody
+
+pub fn constructor_forall0(String, () -> ConstructorBody, weight? : Int) -> ConstructorSpec
+
+pub fn constructor_forall1(String, BinderSpec, (VarRef) -> ConstructorBody, weight? : Int) -> ConstructorSpec
+
+pub fn constructor_forall2(String, BinderSpec, BinderSpec, (VarRef, VarRef) -> ConstructorBody, weight? : Int) -> ConstructorSpec
+
+pub fn constructor_forall3(String, BinderSpec, BinderSpec, BinderSpec, (VarRef, VarRef, VarRef) -> ConstructorBody, weight? : Int) -> ConstructorSpec
+
+pub fn constructor_scoped(String, Array[BinderSpec], (Scope) -> ConstructorBody, weight? : Int) -> ConstructorSpec
+
+pub fn ctor(String, Array[Term]) -> Term
+
 pub fn hypothesis_predicate(String, Array[Term]) -> HypothesisSpec
 
 pub fn hypothesis_rel_call(String, Array[Term]) -> HypothesisSpec
+
+pub fn in_param(String, TypeRef) -> ParamSpec
+
+pub fn inductive(String, Array[ParamSpec], Array[ConstructorSpec]) -> RelationSpec
 
 pub fn make_binder(String, TypeRef) -> BinderSpec
 
@@ -18,13 +38,21 @@ pub fn mode_in() -> ParamMode
 
 pub fn mode_out() -> ParamMode
 
+pub fn out_param(String, TypeRef) -> ParamSpec
+
+pub fn pred(String, Array[Term]) -> HypothesisSpec
+
+pub fn rel(String, Array[Term]) -> HypothesisSpec
+
 pub fn term_ctor(String, Array[Term]) -> Term
 
-pub fn term_var(String) -> Term
+pub fn ty(String) -> TypeRef
 
 pub fn type_app(String, Array[TypeRef]) -> TypeRef
 
-pub fn type_named(String) -> TypeRef
+pub fn v(String) -> Term
+
+pub fn var_ref(String) -> VarRef
 
 // Errors
 
@@ -36,6 +64,14 @@ pub struct BinderSpec {
 pub impl Eq for BinderSpec
 pub impl Show for BinderSpec
 pub impl ToJson for BinderSpec
+
+pub struct ConstructorBody {
+  hypotheses : Array[HypothesisSpec]
+  conclusion : Array[Term]
+}
+pub impl Eq for ConstructorBody
+pub impl Show for ConstructorBody
+pub impl ToJson for ConstructorBody
 
 pub struct ConstructorSpec {
   name : String
@@ -86,6 +122,18 @@ pub impl Eq for RelationSpec
 pub impl Show for RelationSpec
 pub impl ToJson for RelationSpec
 
+pub struct Scope {
+  vars : Array[VarRef]
+}
+pub fn Scope::at(Self, Int) -> VarRef
+pub fn Scope::find(Self, String) -> VarRef?
+pub fn Scope::term(Self, String) -> Term?
+pub fn Scope::term_or_abort(Self, String) -> Term
+pub fn Scope::v(Self, String) -> VarRef
+pub impl Eq for Scope
+pub impl Show for Scope
+pub impl ToJson for Scope
+
 pub enum Term {
   Var(String)
   Ctor(String, Array[Term])
@@ -101,6 +149,15 @@ pub enum TypeRef {
 pub impl Eq for TypeRef
 pub impl Show for TypeRef
 pub impl ToJson for TypeRef
+
+pub struct VarRef {
+  name : String
+}
+pub fn VarRef::name(Self) -> String
+pub fn VarRef::term(Self) -> Term
+pub impl Eq for VarRef
+pub impl Show for VarRef
+pub impl ToJson for VarRef
 
 // Type aliases
 

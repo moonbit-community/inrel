@@ -3,8 +3,8 @@ test "relation mode partition follows in/out split" {
   let rel = @spec.make_relation(
     "complete",
     [
-      @spec.make_param("depth", @spec.type_named("Nat"), @spec.mode_in()),
-      @spec.make_param("tree", @spec.type_named("Tree"), @spec.mode_out()),
+      @spec.make_param("depth", @spec.ty("Nat"), @spec.mode_in()),
+      @spec.make_param("tree", @spec.ty("Tree"), @spec.mode_out()),
     ],
     [],
   )
@@ -15,10 +15,9 @@ test "relation mode partition follows in/out split" {
 
 ///|
 test "constructor helper defaults weight to one" {
-  let c = @spec.make_constructor("CompleteLeaf", [], [], [
-    @spec.term_ctor("O", []),
-    @spec.term_ctor("Leaf", []),
-  ])
+  let c = @spec.constructor_forall0("CompleteLeaf", () => {
+    @spec.body([@spec.ctor("O", []), @spec.ctor("Leaf", [])])
+  })
   inspect(c.weight, content="1")
 }
 
@@ -29,7 +28,7 @@ test "relation show renders empty inductive body" {
     [
       @spec.make_param(
         "xs",
-        @spec.type_app("List", [@spec.type_named("Nat")]),
+        @spec.type_app("List", [@spec.ty("Nat")]),
         @spec.mode_in(),
       ),
     ],
@@ -45,23 +44,16 @@ test "relation show renders empty inductive body" {
 test "relation show renders constructor and binders" {
   let rel = @spec.make_relation(
     "nonempty",
-    [@spec.make_param("tree", @spec.type_named("Tree"), @spec.mode_out())],
+    [@spec.make_param("tree", @spec.ty("Tree"), @spec.mode_out())],
     [
-      @spec.make_constructor(
+      @spec.constructor_forall3(
         "NonEmpty",
-        [
-          @spec.make_binder("x", @spec.type_named("Nat")),
-          @spec.make_binder("l", @spec.type_named("Tree")),
-          @spec.make_binder("r", @spec.type_named("Tree")),
-        ],
-        [],
-        [
-          @spec.term_ctor("Node", [
-            @spec.term_var("x"),
-            @spec.term_var("l"),
-            @spec.term_var("r"),
-          ]),
-        ],
+        @spec.binder("x", @spec.ty("Nat")),
+        @spec.binder("l", @spec.ty("Tree")),
+        @spec.binder("r", @spec.ty("Tree")),
+        (x, l, r) => {
+          @spec.body([@spec.ctor("Node", [x.term(), l.term(), r.term()])])
+        },
       ),
     ],
   )
@@ -69,7 +61,7 @@ test "relation show renders constructor and binders" {
     rel.to_string(),
     content=(
       #|Inductive nonempty : Tree -> Prop :=
-      #| | NonEmpty : forall x l r, nonempty (Node x l r).
+      #|| NonEmpty : forall x l r, nonempty (Node x l r).
     ),
   )
 }
@@ -79,52 +71,34 @@ test "relation show renders hypotheses chain" {
   let rel = @spec.make_relation(
     "bst",
     [
-      @spec.make_param("lo", @spec.type_named("Nat"), @spec.mode_in()),
-      @spec.make_param("hi", @spec.type_named("Nat"), @spec.mode_in()),
-      @spec.make_param("tree", @spec.type_named("Tree"), @spec.mode_out()),
+      @spec.make_param("lo", @spec.ty("Nat"), @spec.mode_in()),
+      @spec.make_param("hi", @spec.ty("Nat"), @spec.mode_in()),
+      @spec.make_param("tree", @spec.ty("Tree"), @spec.mode_out()),
     ],
     [
-      @spec.make_constructor("BstLeaf", [], [], [
-        @spec.term_var("lo"),
-        @spec.term_var("hi"),
-        @spec.term_ctor("Leaf", []),
-      ]),
-      @spec.make_constructor(
+      @spec.constructor_forall0("BstLeaf", () => {
+        @spec.body([@spec.v("lo"), @spec.v("hi"), @spec.ctor("Leaf", [])])
+      }),
+      @spec.constructor_forall3(
         "BstNode",
-        [
-          @spec.make_binder("x", @spec.type_named("Nat")),
-          @spec.make_binder("l", @spec.type_named("Tree")),
-          @spec.make_binder("r", @spec.type_named("Tree")),
-        ],
-        [
-          @spec.hypothesis_predicate("lt", [
-            @spec.term_var("lo"),
-            @spec.term_var("x"),
-          ]),
-          @spec.hypothesis_predicate("lt", [
-            @spec.term_var("x"),
-            @spec.term_var("hi"),
-          ]),
-          @spec.hypothesis_rel_call("bst", [
-            @spec.term_var("lo"),
-            @spec.term_var("x"),
-            @spec.term_var("l"),
-          ]),
-          @spec.hypothesis_rel_call("bst", [
-            @spec.term_var("x"),
-            @spec.term_var("hi"),
-            @spec.term_var("r"),
-          ]),
-        ],
-        [
-          @spec.term_var("lo"),
-          @spec.term_var("hi"),
-          @spec.term_ctor("Node", [
-            @spec.term_var("x"),
-            @spec.term_var("l"),
-            @spec.term_var("r"),
-          ]),
-        ],
+        @spec.binder("x", @spec.ty("Nat")),
+        @spec.binder("l", @spec.ty("Tree")),
+        @spec.binder("r", @spec.ty("Tree")),
+        (x, l, r) => {
+          @spec.body(
+            [
+              @spec.v("lo"),
+              @spec.v("hi"),
+              @spec.ctor("Node", [x.term(), l.term(), r.term()]),
+            ],
+            hypotheses=[
+              @spec.pred("lt", [@spec.v("lo"), x.term()]),
+              @spec.pred("lt", [x.term(), @spec.v("hi")]),
+              @spec.rel("bst", [@spec.v("lo"), x.term(), l.term()]),
+              @spec.rel("bst", [x.term(), @spec.v("hi"), r.term()]),
+            ],
+          )
+        },
       ),
     ],
   )
@@ -132,8 +106,60 @@ test "relation show renders hypotheses chain" {
     rel,
     content=(
       #|Inductive bst : Nat -> Nat -> Tree -> Prop :=
-      #| | BstLeaf : bst lo hi Leaf
-      #| | BstNode : forall x l r, lt lo x -> lt x hi -> bst lo x l -> bst x hi r -> bst lo hi (Node x l r).
+      #|| BstLeaf : bst lo hi Leaf
+      #|| BstNode : forall x l r, lt lo x -> lt x hi -> bst lo x l -> bst x hi r -> bst lo hi (Node x l r).
+    ),
+  )
+}
+
+///|
+test "builder forall helper lowers to relation spec" {
+  let rel = @spec.inductive(
+    "nonempty",
+    [@spec.out_param("tree", @spec.ty("Tree"))],
+    [
+      @spec.constructor_forall3(
+        "NonEmpty",
+        @spec.binder("x", @spec.ty("Nat")),
+        @spec.binder("l", @spec.ty("Tree")),
+        @spec.binder("r", @spec.ty("Tree")),
+        (x, l, r) => {
+          @spec.body([@spec.ctor("Node", [x.term(), l.term(), r.term()])])
+        },
+      ),
+    ],
+  )
+  inspect(
+    rel.to_string(),
+    content=(
+      #|Inductive nonempty : Tree -> Prop :=
+      #|| NonEmpty : forall x l r, nonempty (Node x l r).
+    ),
+  )
+}
+
+///|
+test "builder forall1 supports repeated variable usage" {
+  let rel = @spec.inductive(
+    "goodTree",
+    [
+      @spec.in_param("n1", @spec.ty("Nat")),
+      @spec.in_param("n2", @spec.ty("Nat")),
+      @spec.out_param("tree", @spec.ty("Tree")),
+    ],
+    [
+      @spec.constructor_forall1(
+        "GoodLeaf",
+        @spec.binder("n", @spec.ty("Nat")),
+        n => @spec.body([n.term(), n.term(), @spec.ctor("Leaf", [])]),
+      ),
+    ],
+  )
+  inspect(
+    rel.to_string(),
+    content=(
+      #|Inductive goodTree : Nat -> Nat -> Tree -> Prop :=
+      #|| GoodLeaf : forall n, goodTree n n Leaf.
     ),
   )
 }
