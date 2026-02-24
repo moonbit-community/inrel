@@ -3,7 +3,7 @@
 ///
 /// Correspondence (paper Figure 2):
 /// `Pattern = Unknown | C Pattern`
-pub enum PatternAst {
+pub(all) enum PatternAst {
   PVar(String)
   PCtor(String, Array[PatternAst])
 } derive(Eq, ToJson)
@@ -21,7 +21,7 @@ pub(all) enum ExprAst {
 ///
 /// `Eq` corresponds to checks from `emit_equalities` in Figure 4.
 /// `Decidable` corresponds to runtime checks `if (S e)? then ... else ret None`.
-pub enum GuardAst {
+pub(all) enum GuardAst {
   Eq(ExprAst, ExprAst)
   Decidable(ExprAst)
 } derive(Eq, ToJson)
@@ -31,14 +31,14 @@ pub enum GuardAst {
 ///
 /// - `Do`  -> `do!`
 /// - `DoM` -> `doM!`
-pub enum BindFlavor {
+pub(all) enum BindFlavor {
   Do
   DoM
 } derive(Eq, ToJson)
 
 ///|
 /// Source expression for a bind in emitted generator code.
-pub enum BindSourceAst {
+pub(all) enum BindSourceAst {
   Arbitrary
   ArbitraryST(String, ExprAst)
   RecursiveCall(String, Array[String])
@@ -50,14 +50,14 @@ pub enum BindSourceAst {
 ///
 /// Correspondence (paper Section 4.3):
 /// `backtrack [ ... (wC, gC) ... ]`
-pub struct WeightedCaseAst {
+pub(all) struct WeightedCaseAst {
   weight : Int
   body : GenNode
 } derive(Eq, ToJson)
 
 ///|
 /// AST for generated code shape from Sections 4.3-4.7.
-pub enum GenNode {
+pub(all) enum GenNode {
   RetNone
   RetSome(Array[ExprAst])
   Backtrack(Array[WeightedCaseAst])
@@ -71,7 +71,7 @@ pub enum GenNode {
 ///
 /// Correspondence (paper Section 4.3):
 /// `Fixpoint aux_arb size in1 ... inn := match size with | O => ... | S size' => ... end`
-pub struct BoundedGeneratorAst {
+pub(all) struct BoundedGeneratorAst {
   aux_name : String
   size_var : String
   inputs : Array[String]
@@ -79,133 +79,6 @@ pub struct BoundedGeneratorAst {
   zero_case : GenNode
   succ_case : GenNode
 } derive(Eq, ToJson)
-
-///|
-pub fn pvar(name : String) -> PatternAst {
-  PatternAst::PVar(name)
-}
-
-///|
-pub fn pctor(name : String, args : Array[PatternAst]) -> PatternAst {
-  PatternAst::PCtor(name, args)
-}
-
-///|
-pub fn evar(name : String) -> ExprAst {
-  ExprAst::Var(name)
-}
-
-///|
-pub fn ector(name : String, args : Array[ExprAst]) -> ExprAst {
-  ExprAst::Ctor(name, args)
-}
-
-///|
-pub fn ecall(name : String, args : Array[ExprAst]) -> ExprAst {
-  ExprAst::Call(name, args)
-}
-
-///|
-pub fn guard_eq(lhs : ExprAst, rhs : ExprAst) -> GuardAst {
-  GuardAst::Eq(lhs, rhs)
-}
-
-///|
-pub fn guard_decidable(expr : ExprAst) -> GuardAst {
-  GuardAst::Decidable(expr)
-}
-
-///|
-pub fn source_arbitrary() -> BindSourceAst {
-  BindSourceAst::Arbitrary
-}
-
-///|
-pub fn source_arbitrary_st(
-  param : String,
-  predicate : ExprAst,
-) -> BindSourceAst {
-  BindSourceAst::ArbitraryST(param, predicate)
-}
-
-///|
-pub fn source_recursive(name : String, args : Array[String]) -> BindSourceAst {
-  BindSourceAst::RecursiveCall(name, args)
-}
-
-///|
-pub fn source_expr(code : String) -> BindSourceAst {
-  BindSourceAst::Expr(code)
-}
-
-///|
-pub fn ret_none() -> GenNode {
-  GenNode::RetNone
-}
-
-///|
-pub fn ret_some(values : Array[ExprAst]) -> GenNode {
-  GenNode::RetSome(values)
-}
-
-///|
-pub fn weighted(weight : Int, body : GenNode) -> WeightedCaseAst {
-  { weight, body }
-}
-
-///|
-pub fn backtrack(cases : Array[WeightedCaseAst]) -> GenNode {
-  GenNode::Backtrack(cases)
-}
-
-///|
-pub fn match_pattern(
-  scrutinee : String,
-  pattern : PatternAst,
-  on_match : GenNode,
-  on_fail : GenNode,
-) -> GenNode {
-  GenNode::MatchPattern(scrutinee, pattern, on_match, on_fail)
-}
-
-///|
-pub fn if_guard(
-  cond : GuardAst,
-  on_true : GenNode,
-  on_false : GenNode,
-) -> GenNode {
-  GenNode::IfGuard(cond, on_true, on_false)
-}
-
-///|
-pub fn bind_do(
-  name : String,
-  source : BindSourceAst,
-  next : GenNode,
-) -> GenNode {
-  GenNode::Bind(BindFlavor::Do, name, source, next)
-}
-
-///|
-pub fn bind_dom(
-  name : String,
-  source : BindSourceAst,
-  next : GenNode,
-) -> GenNode {
-  GenNode::Bind(BindFlavor::DoM, name, source, next)
-}
-
-///|
-pub fn bounded_generator(
-  aux_name : String,
-  size_var : String,
-  inputs : Array[String],
-  succ_size_var : String,
-  zero_case : GenNode,
-  succ_case : GenNode,
-) -> BoundedGeneratorAst {
-  { aux_name, size_var, inputs, succ_size_var, zero_case, succ_case }
-}
 
 ///|
 fn indent(level : Int) -> String {

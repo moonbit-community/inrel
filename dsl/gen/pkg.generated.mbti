@@ -2,57 +2,18 @@
 package "CAIMEOX/inrel/dsl/gen"
 
 // Values
-pub fn backtrack(Array[WeightedCaseAst]) -> GenNode
-
-pub fn bind_do(String, BindSourceAst, GenNode) -> GenNode
-
-pub fn bind_dom(String, BindSourceAst, GenNode) -> GenNode
-
-pub fn bounded_generator(String, String, Array[String], String, GenNode, GenNode) -> BoundedGeneratorAst
-
-pub fn ecall(String, Array[ExprAst]) -> ExprAst
-
-pub fn ector(String, Array[ExprAst]) -> ExprAst
-
-pub fn evar(String) -> ExprAst
-
-pub fn guard_decidable(ExprAst) -> GuardAst
-
-pub fn guard_eq(ExprAst, ExprAst) -> GuardAst
-
-pub fn if_guard(GuardAst, GenNode, GenNode) -> GenNode
-
-pub fn match_pattern(String, PatternAst, GenNode, GenNode) -> GenNode
-
-pub fn pctor(String, Array[PatternAst]) -> PatternAst
-
-pub fn pvar(String) -> PatternAst
-
-pub fn ret_none() -> GenNode
-
-pub fn ret_some(Array[ExprAst]) -> GenNode
-
-pub fn source_arbitrary() -> BindSourceAst
-
-pub fn source_arbitrary_st(String, ExprAst) -> BindSourceAst
-
-pub fn source_expr(String) -> BindSourceAst
-
-pub fn source_recursive(String, Array[String]) -> BindSourceAst
-
-pub fn weighted(Int, GenNode) -> WeightedCaseAst
 
 // Errors
 
 // Types and methods
-pub enum BindFlavor {
+pub(all) enum BindFlavor {
   Do
   DoM
 }
 pub impl Eq for BindFlavor
 pub impl ToJson for BindFlavor
 
-pub enum BindSourceAst {
+pub(all) enum BindSourceAst {
   Arbitrary
   ArbitraryST(String, ExprAst)
   RecursiveCall(String, Array[String])
@@ -62,7 +23,7 @@ pub impl Eq for BindSourceAst
 pub impl Show for BindSourceAst
 pub impl ToJson for BindSourceAst
 
-pub struct BoundedGeneratorAst {
+pub(all) struct BoundedGeneratorAst {
   aux_name : String
   size_var : String
   inputs : Array[String]
@@ -84,7 +45,7 @@ pub impl Eq for ExprAst
 pub impl Show for ExprAst
 pub impl ToJson for ExprAst
 
-pub enum GenNode {
+pub(all) enum GenNode {
   RetNone
   RetSome(Array[ExprAst])
   Backtrack(Array[WeightedCaseAst])
@@ -97,7 +58,7 @@ pub impl Eq for GenNode
 pub impl Show for GenNode
 pub impl ToJson for GenNode
 
-pub enum GuardAst {
+pub(all) enum GuardAst {
   Eq(ExprAst, ExprAst)
   Decidable(ExprAst)
 }
@@ -105,7 +66,7 @@ pub impl Eq for GuardAst
 pub impl Show for GuardAst
 pub impl ToJson for GuardAst
 
-pub enum PatternAst {
+pub(all) enum PatternAst {
   PVar(String)
   PCtor(String, Array[PatternAst])
 }
@@ -113,7 +74,7 @@ pub impl Eq for PatternAst
 pub impl Show for PatternAst
 pub impl ToJson for PatternAst
 
-pub struct WeightedCaseAst {
+pub(all) struct WeightedCaseAst {
   weight : Int
   body : GenNode
 }

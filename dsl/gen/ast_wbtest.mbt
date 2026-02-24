@@ -1,32 +1,41 @@
 ///|
 test "paper-like bounded generator rendering: complete-style" {
-  let leaf_case = @gen.weighted(1, @gen.ret_some([Ctor("Leaf", [])]))
-  let node_body = @gen.match_pattern(
+  let leaf_case : WeightedCaseAst = {
+    weight: 1,
+    body: RetSome([Ctor("Leaf", [])]),
+  }
+
+  let node_body : GenNode = MatchPattern(
     "in1",
-    @gen.pctor("S", [@gen.pvar("n")]),
-    @gen.bind_dom(
+    PCtor("S", [PVar("n")]),
+    Bind(
+      DoM,
       "l",
-      @gen.source_recursive("aux_arb", ["n"]),
-      @gen.bind_dom(
+      RecursiveCall("aux_arb", ["n"]),
+      Bind(
+        DoM,
         "r",
-        @gen.source_recursive("aux_arb", ["n"]),
-        @gen.bind_do(
+        RecursiveCall("aux_arb", ["n"]),
+        Bind(
+          Do,
           "x",
-          @gen.source_arbitrary(),
-          @gen.ret_some([Ctor("Node", [Var("x"), Var("l"), Var("r")])]),
+          Arbitrary,
+          RetSome([Ctor("Node", [Var("x"), Var("l"), Var("r")])]),
         ),
       ),
     ),
-    @gen.ret_none(),
+    RetNone,
   )
-  let ast = @gen.bounded_generator(
-    "aux_arb",
-    "size",
-    ["in1"],
-    "size'",
-    @gen.backtrack([leaf_case]),
-    @gen.backtrack([leaf_case, @gen.weighted(1, node_body)]),
-  )
+
+  let ast : BoundedGeneratorAst = {
+    aux_name: "aux_arb",
+    size_var: "size",
+    inputs: ["in1"],
+    succ_size_var: "size'",
+    zero_case: Backtrack([leaf_case]),
+    succ_case: Backtrack([leaf_case, { weight: 1, body: node_body }]),
+  }
+
   inspect(
     ast,
     content=(
@@ -61,24 +70,26 @@ test "paper-like bounded generator rendering: complete-style" {
 
 ///|
 test "paper-like sub-generator rendering: pattern/equality/check chain" {
-  let g = @gen.match_pattern(
+  let g : GenNode = MatchPattern(
     "in1",
-    @gen.pctor("S", [@gen.pvar("n")]),
-    @gen.if_guard(
-      @gen.guard_eq(Var("in1"), Var("in2")),
-      @gen.bind_do(
+    PCtor("S", [PVar("n")]),
+    IfGuard(
+      Eq(Var("in1"), Var("in2")),
+      Bind(
+        Do,
         "x",
-        @gen.source_arbitrary_st("x", Call("<", [Var("lo"), Var("x")])),
-        @gen.if_guard(
-          @gen.guard_decidable(Call("<", [Var("x"), Var("hi")])),
-          @gen.ret_some([Ctor("Node", [Var("x"), Var("l"), Var("r")])]),
-          @gen.ret_none(),
+        ArbitraryST("x", Call("<", [Var("lo"), Var("x")])),
+        IfGuard(
+          Decidable(Call("<", [Var("x"), Var("hi")])),
+          RetSome([Ctor("Node", [Var("x"), Var("l"), Var("r")])]),
+          RetNone,
         ),
       ),
-      @gen.ret_none(),
+      RetNone,
     ),
-    @gen.ret_none(),
+    RetNone,
   )
+
   inspect(
     g.to_string(),
     content=(
