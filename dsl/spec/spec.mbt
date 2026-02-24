@@ -142,7 +142,7 @@ pub struct RelationSpec {
   name : String
   params : Array[ParamSpec]
   constructors : Array[ConstructorSpec]
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 /// Convenience constructor with default weight 1.
@@ -194,4 +194,104 @@ pub fn RelationSpec::output_positions(self : RelationSpec) -> Array[Int] {
     }
   }
   out
+}
+
+///|
+fn TypeRef::render(self : TypeRef) -> String {
+  match self {
+    Named(name) => name
+    App(name, args) =>
+      if args.is_empty() {
+        name
+      } else {
+        let parts = args.map(arg => {
+          match arg {
+            Named(_) => arg.render()
+            App(_, _) => "(\{arg.render()})"
+          }
+        })
+        let args_text = parts.join(" ")
+        "\{name} \{args_text}"
+      }
+  }
+}
+
+///|
+fn Term::render(self : Term) -> String {
+  match self {
+    Var(name) => name
+    Ctor(name, args) =>
+      if args.is_empty() {
+        name
+      } else {
+        let args_text = args.map(arg => arg.render()).join(" ")
+        "(\{name} \{args_text})"
+      }
+  }
+}
+
+///|
+fn HypothesisSpec::render(self : HypothesisSpec) -> String {
+  match self {
+    RelCall(name, args) | Predicate(name, args) =>
+      if args.is_empty() {
+        name
+      } else {
+        let args_text = args.map(arg => arg.render()).join(" ")
+        "\{name} \{args_text}"
+      }
+  }
+}
+
+///|
+fn render_relation_call(name : String, args : Array[Term]) -> String {
+  if args.is_empty() {
+    name
+  } else {
+    let args_text = args.map(arg => arg.render()).join(" ")
+    "\{name} \{args_text}"
+  }
+}
+
+///|
+fn ConstructorSpec::render(
+  self : ConstructorSpec,
+  relation_name : String,
+) -> String {
+  let pieces : Array[String] = []
+  for hypothesis in self.hypotheses {
+    pieces.push(hypothesis.render())
+  }
+  pieces.push(render_relation_call(relation_name, self.conclusion))
+  let body = pieces.join(" -> ")
+  let binders = self.binders.map(b => b.name).join(" ")
+  if binders is "" {
+    " | \{self.name} : \{body}"
+  } else {
+    " | \{self.name} : forall \{binders}, \{body}"
+  }
+}
+
+///|
+pub fn RelationSpec::to_inductive_string(self : RelationSpec) -> String {
+  let signature = if self.params.is_empty() {
+    "Prop"
+  } else {
+    let param_types = self.params.map(param => param.ty.render()).join(" -> ")
+    "\{param_types} -> Prop"
+  }
+  let header = "Inductive \{self.name} : \{signature} :="
+  if self.constructors.is_empty() {
+    "\{header}\n."
+  } else {
+    let constructors = self.constructors
+      .map(c => c.render(self.name))
+      .join("\n")
+    "\{header}\n\{constructors}."
+  }
+}
+
+///|
+pub impl Show for RelationSpec with output(self, logger) {
+  logger.write_string(self.to_inductive_string())
 }

@@ -81,6 +81,7 @@ pub struct RelationSpec {
 pub fn RelationSpec::arity(Self) -> Int
 pub fn RelationSpec::input_positions(Self) -> Array[Int]
 pub fn RelationSpec::output_positions(Self) -> Array[Int]
+pub fn RelationSpec::to_inductive_string(Self) -> String
 pub impl Eq for RelationSpec
 pub impl Show for RelationSpec
 pub impl ToJson for RelationSpec
