@@ -1,0 +1,65 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "CAIMEOX/inrel/dsl/unify"
+
+import {
+  "CAIMEOX/inrel/dsl/spec",
+}
+
+// Values
+pub fn pattern_ctor(String, Array[Pattern]) -> Pattern
+
+pub fn pattern_var(Int) -> Pattern
+
+pub fn range_ctor(String, Array[Range]) -> Range
+
+pub fn range_fixed() -> Range
+
+pub fn range_link(Int) -> Range
+
+pub fn range_undef(@spec.TypeRef) -> Range
+
+// Errors
+
+// Types and methods
+pub enum Pattern {
+  PVar(Int)
+  PCtor(String, Array[Pattern])
+}
+pub impl Eq for Pattern
+pub impl Show for Pattern
+pub impl ToJson for Pattern
+
+pub enum Range {
+  Undef(@spec.TypeRef)
+  Fixed
+  Link(Int)
+  Ctor(String, Array[Range])
+}
+pub impl Eq for Range
+pub impl Show for Range
+pub impl ToJson for Range
+
+pub struct UnifyState {
+  constraints : Map[Int, Range]
+  equalities : Array[(Int, Int)]
+  patterns : Array[(Int, Pattern)]
+  unknowns : Array[Int]
+  mut next_unknown : Int
+}
+pub fn UnifyState::ensure_unknown(Self, Int) -> Unit
+pub fn UnifyState::equality_count(Self) -> Int
+pub fn UnifyState::fresh_unknown(Self, @spec.TypeRef) -> Int
+pub fn UnifyState::lookup(Self, Int) -> Range?
+pub fn UnifyState::new(Map[Int, Range], Array[Int], next_unknown? : Int) -> Self
+pub fn UnifyState::next_unknown_id(Self) -> Int
+pub fn UnifyState::pattern_count(Self) -> Int
+pub fn UnifyState::record_equality(Self, Int, Int) -> Unit
+pub fn UnifyState::record_pattern(Self, Int, Pattern) -> Unit
+pub fn UnifyState::unknown_count(Self) -> Int
+pub fn UnifyState::update_constraint(Self, Int, Range) -> Unit
+
+// Type aliases
+pub type Unknown = Int
+
+// Traits
+

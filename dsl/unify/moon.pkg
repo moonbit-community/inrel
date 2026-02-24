@@ -1,0 +1,7 @@
+import {
+  "CAIMEOX/inrel/dsl/spec" @spec,
+}
+
+import {
+  "CAIMEOX/inrel/dsl/spec" @spec,
+} for "test"

@@ -1,0 +1,107 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "CAIMEOX/inrel/dsl/spec"
+
+// Values
+pub fn hypothesis_predicate(String, Array[Term]) -> HypothesisSpec
+
+pub fn hypothesis_rel_call(String, Array[Term]) -> HypothesisSpec
+
+pub fn make_binder(String, TypeRef) -> BinderSpec
+
+pub fn make_constructor(String, Array[BinderSpec], Array[HypothesisSpec], Array[Term], weight? : Int) -> ConstructorSpec
+
+pub fn make_param(String, TypeRef, ParamMode) -> ParamSpec
+
+pub fn make_relation(String, Array[ParamSpec], Array[ConstructorSpec]) -> RelationSpec
+
+pub fn mode_in() -> ParamMode
+
+pub fn mode_out() -> ParamMode
+
+pub fn term_ctor(String, Array[Term]) -> Term
+
+pub fn term_var(String) -> Term
+
+pub fn type_app(String, Array[TypeRef]) -> TypeRef
+
+pub fn type_named(String) -> TypeRef
+
+// Errors
+
+// Types and methods
+pub struct BinderSpec {
+  name : String
+  ty : TypeRef
+}
+pub impl Eq for BinderSpec
+pub impl Show for BinderSpec
+pub impl ToJson for BinderSpec
+
+pub struct ConstructorSpec {
+  name : String
+  binders : Array[BinderSpec]
+  hypotheses : Array[HypothesisSpec]
+  conclusion : Array[Term]
+  weight : Int
+}
+pub impl Eq for ConstructorSpec
+pub impl Show for ConstructorSpec
+pub impl ToJson for ConstructorSpec
+
+pub enum HypothesisSpec {
+  RelCall(String, Array[Term])
+  Predicate(String, Array[Term])
+}
+pub impl Eq for HypothesisSpec
+pub impl Show for HypothesisSpec
+pub impl ToJson for HypothesisSpec
+
+pub enum ParamMode {
+  In
+  Out
+}
+pub impl Eq for ParamMode
+pub impl Show for ParamMode
+pub impl ToJson for ParamMode
+
+pub struct ParamSpec {
+  name : String
+  ty : TypeRef
+  mode : ParamMode
+}
+pub impl Eq for ParamSpec
+pub impl Show for ParamSpec
+pub impl ToJson for ParamSpec
+
+pub struct RelationSpec {
+  name : String
+  params : Array[ParamSpec]
+  constructors : Array[ConstructorSpec]
+}
+pub fn RelationSpec::arity(Self) -> Int
+pub fn RelationSpec::input_positions(Self) -> Array[Int]
+pub fn RelationSpec::output_positions(Self) -> Array[Int]
+pub impl Eq for RelationSpec
+pub impl Show for RelationSpec
+pub impl ToJson for RelationSpec
+
+pub enum Term {
+  Var(String)
+  Ctor(String, Array[Term])
+}
+pub impl Eq for Term
+pub impl Show for Term
+pub impl ToJson for Term
+
+pub enum TypeRef {
+  Named(String)
+  App(String, Array[TypeRef])
+}
+pub impl Eq for TypeRef
+pub impl Show for TypeRef
+pub impl ToJson for TypeRef
+
+// Type aliases
+
+// Traits
+
