@@ -75,9 +75,9 @@ pub fn range_ctor(c : String, rs : Array[Range]) -> Range {
 ///   - `unknowns    : Set Unknown`
 pub struct UnifyState {
   constraints : Map[Unknown, Range]
-  equalities : Array[(Unknown, Unknown)]
+  equalities : Set[(Unknown, Unknown)]
   patterns : Array[(Unknown, Pattern)]
-  unknowns : Array[Unknown]
+  unknowns : Set[Unknown]
   mut next_unknown : Unknown
 }
 
@@ -97,23 +97,14 @@ fn next_unknown_id(us : Array[Unknown]) -> Unknown {
 pub fn UnifyState::new(
   constraints : Map[Unknown, Range],
   us : Array[Unknown],
-  next_unknown? : Unknown,
+  next_unknown? : Unknown = next_unknown_id(us),
 ) -> UnifyState {
-  let next_unknown = match next_unknown {
-    Some(n) => n
-    None => next_unknown_id(us)
-  }
-  { constraints, equalities: [], patterns: [], unknowns: us, next_unknown }
-}
-
-///|
-/// Register an unknown if not present.
-pub fn UnifyState::ensure_unknown(self : UnifyState, u : Unknown) -> Unit {
-  if !self.unknowns.contains(u) {
-    self.unknowns.push(u)
-  }
-  if u >= self.next_unknown {
-    self.next_unknown = u + 1
+  {
+    constraints,
+    equalities: Set::new(),
+    patterns: [],
+    unknowns: Set::from_array(us),
+    next_unknown,
   }
 }
 
@@ -124,7 +115,6 @@ pub fn UnifyState::update_constraint(
   u : Unknown,
   r : Range,
 ) -> Unit {
-  self.ensure_unknown(u)
   self.constraints[u] = r
 }
 
@@ -135,12 +125,8 @@ pub fn UnifyState::record_equality(
   u1 : Unknown,
   u2 : Unknown,
 ) -> Unit {
-  self.ensure_unknown(u1)
-  self.ensure_unknown(u2)
   let eq = @cmp.minmax(u1, u2)
-  if !self.equalities.contains(eq) {
-    self.equalities.push(eq)
-  }
+  self.equalities.add(eq)
 }
 
 ///|
@@ -150,7 +136,6 @@ pub fn UnifyState::record_pattern(
   u : Unknown,
   p : Pattern,
 ) -> Unit {
-  self.ensure_unknown(u)
   self.patterns.push((u, p))
 }
 
@@ -162,7 +147,7 @@ pub fn UnifyState::fresh_unknown(
 ) -> Unknown {
   let u = self.next_unknown
   self.next_unknown += 1
-  self.unknowns.push(u)
+  self.unknowns.add(u)
   self.constraints[u] = Range::Undef(ty)
   u
 }
@@ -213,17 +198,12 @@ pub fn UnifyState::unify(self : UnifyState, r1 : Range, r2 : Range) -> Bool {
         (Some(r1), Some(r2)) => self.unify_r(u1, r1, u2, r2)
         _ => false
       }
-    (Link(u), Ctor(c, rs)) =>
+    (Link(u), Ctor(c, rs)) | (Ctor(c, rs), Link(u)) =>
       match self.lookup(u) {
         Some(r) => self.unify_rc(u, r, c, rs)
         None => false
       }
     (Ctor(c1, rs1), Ctor(c2, rs2)) => self.unify_c(c1, rs1, c2, rs2)
-    (Ctor(c, rs), Link(u)) =>
-      match self.lookup(u) {
-        Some(r) => self.unify_rc(u, r, c, rs)
-        None => false
-      }
     _ => false
   }
 }

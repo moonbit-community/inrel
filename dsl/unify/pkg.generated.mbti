@@ -3,6 +3,7 @@ package "CAIMEOX/inrel/dsl/unify"
 
 import {
   "CAIMEOX/inrel/dsl/spec",
+  "moonbitlang/core/set",
 }
 
 // Values
@@ -41,12 +42,11 @@ pub impl ToJson for Range
 
 pub struct UnifyState {
   constraints : Map[Int, Range]
-  equalities : Array[(Int, Int)]
+  equalities : @set.Set[(Int, Int)]
   patterns : Array[(Int, Pattern)]
-  unknowns : Array[Int]
+  unknowns : @set.Set[Int]
   mut next_unknown : Int
 }
-pub fn UnifyState::ensure_unknown(Self, Int) -> Unit
 pub fn UnifyState::equality_count(Self) -> Int
 pub fn UnifyState::fresh_unknown(Self, @spec.TypeRef) -> Int
 pub fn UnifyState::lookup(Self, Int) -> Range?

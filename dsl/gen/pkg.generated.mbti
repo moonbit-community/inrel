@@ -1,9 +1,25 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "CAIMEOX/inrel/dsl/gen"
 
+import {
+  "CAIMEOX/inrel/dsl/spec",
+  "CAIMEOX/inrel/dsl/unify",
+  "moonbitlang/core/immut/hashmap",
+}
+
 // Values
+pub fn compile_constructor_case(@spec.RelationSpec, @spec.ConstructorSpec, options? : CompileOptions) -> WeightedCaseAst? raise GenCompileError
+
+pub fn compile_relation_to_bounded_generator(@spec.RelationSpec, options? : CompileOptions) -> BoundedGeneratorAst raise GenCompileError
+
+pub fn default_compile_options() -> CompileOptions
+
+pub fn emit_hypotheses_from_unify(@unify.UnifyState, HypothesisEmitEnv, Array[@spec.HypothesisSpec], GenNode) -> GenNode raise GenCompileError
 
 // Errors
+pub(all) suberror GenCompileError {
+  GenCompileError(String)
+}
 
 // Types and methods
 pub(all) enum BindFlavor {
@@ -36,6 +52,15 @@ pub impl Eq for BoundedGeneratorAst
 pub impl Show for BoundedGeneratorAst
 pub impl ToJson for BoundedGeneratorAst
 
+pub(all) struct CompileOptions {
+  aux_name : String
+  size_var : String
+  succ_size_var : String
+}
+pub impl Eq for CompileOptions
+pub impl Show for CompileOptions
+pub impl ToJson for CompileOptions
+
 pub(all) enum ExprAst {
   Var(String)
   Ctor(String, Array[ExprAst])
@@ -65,6 +90,16 @@ pub(all) enum GuardAst {
 pub impl Eq for GuardAst
 pub impl Show for GuardAst
 pub impl ToJson for GuardAst
+
+pub(all) struct HypothesisEmitEnv {
+  relation_name : String
+  aux_name : String
+  input_positions : Array[Int]
+  output_positions : Array[Int]
+  var_unknowns : @hashmap.HashMap[String, Int]
+  unknown_names : @hashmap.HashMap[Int, String]
+}
+pub impl Eq for HypothesisEmitEnv
 
 pub(all) enum PatternAst {
   PVar(String)

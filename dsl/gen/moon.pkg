@@ -1,1 +1,5 @@
-
+import {
+  "CAIMEOX/inrel/dsl/spec" @spec,
+  "CAIMEOX/inrel/dsl/unify" @unify,
+  "moonbitlang/core/immut/hashmap" @ihashmap,
+}
