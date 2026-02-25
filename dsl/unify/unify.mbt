@@ -6,6 +6,19 @@
 pub type Unknown = Int
 
 ///|
+/// Unification failures (Section 4.4 / Figure 3).
+pub suberror UnificationError {
+  UnknownIdentifier(Unknown)
+  MissingConstraint(Unknown)
+  UnificationFailure(String)
+} derive(Eq, Show, ToJson)
+
+///|
+fn[T] fail_unify(msg : String) -> T raise UnificationError {
+  raise UnificationFailure(msg)
+}
+
+///|
 /// Match pattern grammar.
 ///
 /// Correspondence:
@@ -109,12 +122,21 @@ pub fn UnifyState::new(
 }
 
 ///|
+fn UnifyState::require_known_unknown(
+  self : UnifyState,
+  u : Unknown,
+) -> Unit raise UnificationError {
+  guard self.unknowns.contains(u) else { raise UnknownIdentifier(u) }
+}
+
+///|
 /// Figure 2 action `update : Unknown -> Range -> Unify ()`.
 pub fn UnifyState::update_constraint(
   self : UnifyState,
   u : Unknown,
   r : Range,
-) -> Unit {
+) -> Unit raise UnificationError {
+  self.require_known_unknown(u)
   self.constraints[u] = r
 }
 
@@ -124,7 +146,9 @@ pub fn UnifyState::record_equality(
   self : UnifyState,
   u1 : Unknown,
   u2 : Unknown,
-) -> Unit {
+) -> Unit raise UnificationError {
+  self.require_known_unknown(u1)
+  self.require_known_unknown(u2)
   let eq = @cmp.minmax(u1, u2)
   self.equalities.add(eq)
 }
@@ -135,7 +159,8 @@ pub fn UnifyState::record_pattern(
   self : UnifyState,
   u : Unknown,
   p : Pattern,
-) -> Unit {
+) -> Unit raise UnificationError {
+  self.require_known_unknown(u)
   self.patterns.push((u, p))
 }
 
@@ -143,7 +168,7 @@ pub fn UnifyState::record_pattern(
 /// Figure 2 action `fresh : Unify Unknown`.
 pub fn UnifyState::fresh_unknown(
   self : UnifyState,
-  ty : @spec.TypeRef,
+  ty? : @spec.TypeRef = fresh_placeholder_ty(),
 ) -> Unknown {
   let u = self.next_unknown
   self.next_unknown += 1
@@ -162,15 +187,8 @@ pub fn UnifyState::lookup(self : UnifyState, u : Unknown) -> Range? {
 fn UnifyState::match_aux_all(
   self : UnifyState,
   rs : Array[Range],
-) -> Array[Pattern]? {
-  let ps : Array[Pattern] = []
-  for r in rs {
-    match self.match_aux(r) {
-      Some(p) => ps.push(p)
-      None => return None
-    }
-  }
-  Some(ps)
+) -> Array[Pattern] raise UnificationError {
+  rs.map(r => self.match_aux(r))
 }
 
 ///|
@@ -190,21 +208,26 @@ fn fresh_placeholder_ty() -> @spec.TypeRef {
 ///
 /// Note:
 /// - Unknowns are represented as `Range::Link(u)` at call-sites.
-pub fn UnifyState::unify(self : UnifyState, r1 : Range, r2 : Range) -> Bool {
+pub fn UnifyState::unify(
+  self : UnifyState,
+  r1 : Range,
+  r2 : Range,
+) -> Unit raise UnificationError {
   match (r1, r2) {
-    (Link(u1), Link(u2)) if u1 == u2 => true
-    (Link(u1), Link(u2)) =>
-      match (self.lookup(u1), self.lookup(u2)) {
-        (Some(r1), Some(r2)) => self.unify_r(u1, r1, u2, r2)
-        _ => false
+    (Link(u1), Link(u2)) if u1 == u2 => ()
+    (Link(u1), Link(u2)) => {
+      guard self.lookup(u1) is Some(left_r) else { raise MissingConstraint(u1) }
+      guard self.lookup(u2) is Some(right_r) else {
+        raise MissingConstraint(u2)
       }
-    (Link(u), Ctor(c, rs)) | (Ctor(c, rs), Link(u)) =>
-      match self.lookup(u) {
-        Some(r) => self.unify_rc(u, r, c, rs)
-        None => false
-      }
+      self.unify_r(u1, left_r, u2, right_r)
+    }
+    (Link(u), Ctor(c, rs)) | (Ctor(c, rs), Link(u)) => {
+      guard self.lookup(u) is Some(r) else { raise MissingConstraint(u) }
+      self.unify_rc(u, r, c, rs)
+    }
     (Ctor(c1, rs1), Ctor(c2, rs2)) => self.unify_c(c1, rs1, c2, rs2)
-    _ => false
+    _ => fail_unify("Cannot unify \{r1} with \{r2}")
   }
 }
 
@@ -216,35 +239,19 @@ pub fn UnifyState::unify_r(
   r1 : Range,
   u2 : Unknown,
   r2 : Range,
-) -> Bool {
+) -> Unit raise UnificationError {
   match (r1, r2) {
-    (Undef(_), _) => {
-      self.update_constraint(u1, Link(u2))
-      true
-    }
-    (Link(_), Undef(_)) => {
-      self.update_constraint(u2, Link(u1))
-      true
-    }
+    (Undef(_), _) => self.update_constraint(u1, Link(u2))
+    (_, Undef(_)) => self.update_constraint(u2, Link(u1))
     (Link(next_u), _) => self.unify(Link(next_u), Link(u2))
-    (Ctor(_, _), Undef(_)) => {
-      self.update_constraint(u2, Link(u1))
-      true
-    }
-    (Ctor(_, _), Link(next_u)) => self.unify(Link(u1), Link(next_u))
+    (_, Link(next_u)) => self.unify(Link(u1), Link(next_u))
     (Ctor(c1, rs1), Ctor(c2, rs2)) => self.unify_c(c1, rs1, c2, rs2)
     (Ctor(c, rs), Fixed) => self.match_range(u2, c, rs)
-    (Fixed, Undef(_)) => {
-      self.update_constraint(u2, Link(u1))
-      true
-    }
-    (Fixed, Link(next_u)) => self.unify(Link(u1), Link(next_u))
+    (Fixed, Ctor(c, rs)) => self.match_range(u1, c, rs)
     (Fixed, Fixed) => {
       self.record_equality(u1, u2)
       self.update_constraint(u1, Link(u2))
-      true
     }
-    (Fixed, Ctor(c, rs)) => self.match_range(u1, c, rs)
   }
 }
 
@@ -256,14 +263,17 @@ pub fn UnifyState::unify_c(
   rs1 : Array[Range],
   c2 : String,
   rs2 : Array[Range],
-) -> Bool {
-  guard c1 == c2 && rs1.length() == rs2.length() else { false }
+) -> Unit raise UnificationError {
+  guard c1 == c2 && rs1.length() == rs2.length() else {
+    fail_unify(
+      "Constructor mismatch: \{c1}/\{rs1.length()} vs \{c2}/\{rs2.length()}",
+    )
+  }
   rs1
   .zip(rs2)
-  .all(pair => {
-    match pair {
-      (r1, r2) => self.unify(r1, r2)
-    }
+  .each(pair => {
+    let (r1, r2) = pair
+    self.unify(r1, r2)
   })
 }
 
@@ -275,19 +285,15 @@ pub fn UnifyState::unify_rc(
   r : Range,
   c : String,
   rs : Array[Range],
-) -> Bool {
+) -> Unit raise UnificationError {
   match r {
-    Undef(_) => {
-      self.update_constraint(u, Ctor(c, rs))
-      true
+    Undef(_) => self.update_constraint(u, Ctor(c, rs))
+    Link(v) => {
+      guard self.lookup(v) is Some(r) else { raise MissingConstraint(v) }
+      self.unify_rc(v, r, c, rs)
     }
-    Link(v) =>
-      match (self.lookup(v), v) {
-        (Some(next_r), v) => self.unify_rc(v, next_r, c, rs)
-        _ => false
-      }
     Fixed => self.match_range(u, c, rs)
-    Ctor(c2, rs2) => self.unify_c(c2, rs2, c, rs)
+    Ctor(c1, rs1) => self.unify_c(c1, rs1, c, rs)
   }
 }
 
@@ -298,46 +304,37 @@ pub fn UnifyState::match_range(
   u : Unknown,
   c : String,
   rs : Array[Range],
-) -> Bool {
-  match self.match_aux_all(rs) {
-    Some(ps) => {
-      self.record_pattern(u, PCtor(c, ps))
-      true
-    }
-    None => false
-  }
+) -> Unit raise UnificationError {
+  let ps = self.match_aux_all(rs)
+  self.record_pattern(u, PCtor(c, ps))
 }
 
 ///|
 /// Figure 3 helper `matchAux`.
-pub fn UnifyState::match_aux(self : UnifyState, r : Range) -> Pattern? {
+pub fn UnifyState::match_aux(
+  self : UnifyState,
+  r : Range,
+) -> Pattern raise UnificationError {
   match r {
-    Ctor(c, rs) =>
-      match self.match_aux_all(rs) {
-        Some(ps) => Some(PCtor(c, ps))
-        None => None
-      }
-    Link(u) =>
-      match (self.lookup(u), u) {
-        (None, _) => None
-        (Some(Undef(_)), u) => {
+    Ctor(c, rs) => PCtor(c, self.match_aux_all(rs))
+    Link(u) => {
+      guard self.lookup(u) is Some(r) else { raise MissingConstraint(u) }
+      match r {
+        Undef(_) => {
           self.update_constraint(u, Fixed)
-          Some(PVar(u))
+          PVar(u)
         }
-        (Some(Fixed), u) => {
-          let v = self.fresh_unknown(fresh_placeholder_ty())
+        Fixed => {
+          let v = self.fresh_unknown()
           self.record_equality(v, u)
           self.update_constraint(v, Link(u))
-          Some(PVar(v))
+          PVar(v)
         }
-        (Some(Link(v)), _) => self.match_aux(Link(v))
-        (Some(Ctor(c, rs)), _) =>
-          match self.match_aux_all(rs) {
-            Some(ps) => Some(PCtor(c, ps))
-            None => None
-          }
+        Link(v) => self.match_aux(Link(v))
+        Ctor(c, rs) => PCtor(c, self.match_aux_all(rs))
       }
-    _ => None
+    }
+    _ => fail_unify("matchAux expects a constructor or unknown, got \{r}")
   }
 }
 

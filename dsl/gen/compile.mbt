@@ -91,9 +91,11 @@ pub fn compile_constructor_case(
   for i in 0..<relation.params.length() {
     let lhs_range = c_term_to_range(ctor_spec.conclusion[i], var_unknowns)
     let rhs_unknown = param_unknowns[i]
-    guard st.unify(lhs_range, @unify.range_link(rhs_unknown)) else {
-      return None
-    }
+    let unify_result : Result[Unit, @unify.UnificationError] = try? st.unify(
+      lhs_range,
+      @unify.range_link(rhs_unknown),
+    )
+    guard unify_result is Ok(_) else { return None }
   }
 
   let output_positions = relation.output_positions()

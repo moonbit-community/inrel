@@ -128,7 +128,12 @@ fn c_wrap_final_assembly(
 ) -> GenNode raise GenCompileError {
   let undef_roots = c_collect_remaining_undefs(state)
   undef_roots.each(unknown => {
-    state.update_constraint(unknown, @unify.range_fixed())
+    state.update_constraint(unknown, @unify.range_fixed()) catch {
+      err =>
+        fail_gen(
+          "Failed to finalize undef root u\{unknown} during assembly: \{err}",
+        )
+    }
   })
 
   let payload = output_unknowns.map(out_unknown => {

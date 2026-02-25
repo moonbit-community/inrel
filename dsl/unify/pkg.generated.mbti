@@ -20,6 +20,14 @@ pub fn range_link(Int) -> Range
 pub fn range_undef(@spec.TypeRef) -> Range
 
 // Errors
+pub suberror UnificationError {
+  UnknownIdentifier(Int)
+  MissingConstraint(Int)
+  UnificationFailure(String)
+}
+pub impl Eq for UnificationError
+pub impl Show for UnificationError
+pub impl ToJson for UnificationError
 
 // Types and methods
 pub enum Pattern {
@@ -50,19 +58,19 @@ pub struct UnifyState {
 pub fn UnifyState::equality_count(Self) -> Int
 pub fn UnifyState::fresh_unknown(Self, @spec.TypeRef) -> Int
 pub fn UnifyState::lookup(Self, Int) -> Range?
-pub fn UnifyState::match_aux(Self, Range) -> Pattern?
-pub fn UnifyState::match_range(Self, Int, String, Array[Range]) -> Bool
+pub fn UnifyState::match_aux(Self, Range) -> Pattern raise UnificationError
+pub fn UnifyState::match_range(Self, Int, String, Array[Range]) -> Unit raise UnificationError
 pub fn UnifyState::new(Map[Int, Range], Array[Int], next_unknown? : Int) -> Self
 pub fn UnifyState::next_unknown_id(Self) -> Int
 pub fn UnifyState::pattern_count(Self) -> Int
-pub fn UnifyState::record_equality(Self, Int, Int) -> Unit
-pub fn UnifyState::record_pattern(Self, Int, Pattern) -> Unit
-pub fn UnifyState::unify(Self, Range, Range) -> Bool
-pub fn UnifyState::unify_c(Self, String, Array[Range], String, Array[Range]) -> Bool
-pub fn UnifyState::unify_r(Self, Int, Range, Int, Range) -> Bool
-pub fn UnifyState::unify_rc(Self, Int, Range, String, Array[Range]) -> Bool
+pub fn UnifyState::record_equality(Self, Int, Int) -> Unit raise UnificationError
+pub fn UnifyState::record_pattern(Self, Int, Pattern) -> Unit raise UnificationError
+pub fn UnifyState::unify(Self, Range, Range) -> Unit raise UnificationError
+pub fn UnifyState::unify_c(Self, String, Array[Range], String, Array[Range]) -> Unit raise UnificationError
+pub fn UnifyState::unify_r(Self, Int, Range, Int, Range) -> Unit raise UnificationError
+pub fn UnifyState::unify_rc(Self, Int, Range, String, Array[Range]) -> Unit raise UnificationError
 pub fn UnifyState::unknown_count(Self) -> Int
-pub fn UnifyState::update_constraint(Self, Int, Range) -> Unit
+pub fn UnifyState::update_constraint(Self, Int, Range) -> Unit raise UnificationError
 
 // Type aliases
 pub type Unknown = Int

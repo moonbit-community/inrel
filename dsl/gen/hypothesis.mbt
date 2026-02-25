@@ -67,9 +67,19 @@ fn emit_hypotheses_from(
       }
       let others = undefined_unknowns.filter(unknown => unknown != target)
       others.each(unknown => {
-        state.update_constraint(unknown, @unify.range_fixed())
+        state.update_constraint(unknown, @unify.range_fixed()) catch {
+          err =>
+            fail_gen(
+              "Failed to fix auxiliary unknown u\{unknown} in hypothesis emission: \{err}",
+            )
+        }
       })
-      state.update_constraint(target, @unify.range_fixed())
+      state.update_constraint(target, @unify.range_fixed()) catch {
+        err =>
+          fail_gen(
+            "Failed to fix target unknown u\{target} in hypothesis emission: \{err}",
+          )
+      }
 
       let next = emit_hypotheses_from(state, env, hypotheses, index + 1, tail)
       let target_name = env.name_of_unknown(target)
