@@ -1,15 +1,15 @@
 ///|
 fn mk_env(
-  var_unknowns : @ihashmap.HashMap[String, Int],
-  unknown_names : @ihashmap.HashMap[Int, String],
+  x_to_u : @ihashmap.HashMap[String, Int],
+  u_to_name : @ihashmap.HashMap[Int, String],
 ) -> HypothesisEmitEnv {
   {
-    relation_name: "bst",
+    r_name: "bst",
     aux_name: "aux_arb",
-    input_positions: [0, 1],
-    output_positions: [2],
-    var_unknowns,
-    unknown_names,
+    in_pos: [0, 1],
+    out_pos: [2],
+    x_to_u,
+    u_to_name,
   }
 }
 

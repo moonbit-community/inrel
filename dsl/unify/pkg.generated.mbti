@@ -56,7 +56,7 @@ pub struct UnifyState {
   mut next_unknown : Int
 }
 pub fn UnifyState::equality_count(Self) -> Int
-pub fn UnifyState::fresh_unknown(Self, @spec.TypeRef) -> Int
+pub fn UnifyState::fresh_unknown(Self, ty? : @spec.TypeRef) -> Int
 pub fn UnifyState::lookup(Self, Int) -> Range?
 pub fn UnifyState::match_aux(Self, Range) -> Pattern raise UnificationError
 pub fn UnifyState::match_range(Self, Int, String, Array[Range]) -> Unit raise UnificationError

@@ -2,17 +2,17 @@
 /// Environment for Section 4.5 hypothesis emission.
 ///
 /// Correspondence (paper Section 4.5 / Figure 4):
-/// - `relation_name` / `aux_name`: relation `R` and recursive generator `aux_arb`
-/// - `input_positions` / `output_positions`: mode partition (`in` / `out`)
-/// - `var_unknowns`: variables from hypotheses to unification unknown ids
-/// - `unknown_names`: pretty names used in emitted generator binds/terms
+/// - `r_name` / `aux_name`: relation `R` and recursive generator `aux_arb`
+/// - `in_pos` / `out_pos`: mode partition (`in` / `out`)
+/// - `x_to_u`: hypothesis variables to unification unknown ids
+/// - `u_to_name`: pretty names used in emitted generator binds/terms
 pub(all) struct HypothesisEmitEnv {
-  relation_name : String
+  r_name : String
   aux_name : String
-  input_positions : Array[Int]
-  output_positions : Array[Int]
-  var_unknowns : @ihashmap.HashMap[String, @unify.Unknown]
-  unknown_names : @ihashmap.HashMap[@unify.Unknown, String]
+  in_pos : Array[Int]
+  out_pos : Array[Int]
+  x_to_u : @ihashmap.HashMap[String, @unify.Unknown]
+  u_to_name : @ihashmap.HashMap[@unify.Unknown, String]
 } derive(Eq)
 
 ///|
@@ -20,7 +20,7 @@ fn HypothesisEmitEnv::name_of_unknown(
   self : HypothesisEmitEnv,
   unknown : @unify.Unknown,
 ) -> String {
-  match self.unknown_names.get(unknown) {
+  match self.u_to_name.get(unknown) {
     Some(name) => name
     None => "u\{unknown}"
   }
@@ -31,63 +31,56 @@ fn HypothesisEmitEnv::unknown_of_var(
   self : HypothesisEmitEnv,
   var_name : String,
 ) -> @unify.Unknown raise GenCompileError {
-  guard self.var_unknowns.get(var_name) is Some(unknown) else {
+  guard self.x_to_u.get(var_name) is Some(unknown) else {
     fail_gen("Unknown variable in hypothesis environment: \{var_name}")
   }
   unknown
 }
 
 ///|
-fn emit_hypotheses_from(
-  state : @unify.UnifyState,
-  env : HypothesisEmitEnv,
-  hypotheses : Array[@spec.HypothesisSpec],
-  index : Int,
-  tail : GenNode,
-) -> GenNode raise GenCompileError {
-  if index >= hypotheses.length() {
-    tail
-  } else {
-    let hypothesis = hypotheses[index]
-    let undefined_unknowns = undefined_unknowns_in_hypothesis(
-      state, env, hypothesis,
-    )
-    if undefined_unknowns.is_empty() {
-      let next = emit_hypotheses_from(state, env, hypotheses, index + 1, tail)
-      IfGuard(
-        Decidable(hypothesis_expr(state, env, hypothesis, -1, "")),
-        next,
-        RetNone,
-      )
-    } else {
-      let target = match
-        choose_recursive_target(state, env, hypothesis, undefined_unknowns) {
-        Some(unknown) => unknown
-        None => undefined_unknowns[undefined_unknowns.length() - 1]
-      }
-      let others = undefined_unknowns.filter(unknown => unknown != target)
-      others.each(unknown => {
-        state.update_constraint(unknown, @unify.range_fixed()) catch {
-          err =>
-            fail_gen(
-              "Failed to fix auxiliary unknown u\{unknown} in hypothesis emission: \{err}",
-            )
-        }
-      })
-      state.update_constraint(target, @unify.range_fixed()) catch {
-        err =>
-          fail_gen(
-            "Failed to fix target unknown u\{target} in hypothesis emission: \{err}",
-          )
-      }
+priv struct HypothesisEmitContext {
+  state : @unify.UnifyState
+  env : HypothesisEmitEnv
+  tail : GenNode
+}
 
-      let next = emit_hypotheses_from(state, env, hypotheses, index + 1, tail)
-      let target_name = env.name_of_unknown(target)
-      let source = final_call_source(state, env, hypothesis, target)
-      let target_bind = Bind(DoM, target_name, source, next)
-      others.rev_fold(init=target_bind, (acc, unknown) => {
-        Bind(Do, env.name_of_unknown(unknown), Arbitrary, acc)
-      })
+///|
+fn HypothesisEmitContext::emit_hypotheses(
+  self : HypothesisEmitContext,
+  hypotheses : ArrayView[@spec.HypothesisSpec],
+) -> GenNode raise GenCompileError {
+  match hypotheses {
+    [] => self.tail
+    [se, .. ss] => {
+      let us : Array[@unify.Unknown] = undef_unknowns(self.state, self.env, se)
+      if us.is_empty() {
+        // Figure 4 (first branch):
+        // if ∀u ∈ e. κ[u] ≠ undef then
+        //   if (S e)? then emit hypotheses ss κ else ret None
+        // Here, `us = {u ∈ e | κ[u] = undef}`, so `us.is_empty()` is exactly
+        // `∀u ∈ e. κ[u] ≠ undef`.
+
+        let next = self.emit_hypotheses(ss)
+        IfGuard(Decidable(check_expr(self.state, self.env, se)), next, RetNone)
+      } else {
+        let uk = match choose_uk(self.state, self.env, se, us) {
+          Some(unknown) => unknown
+          None => us[us.length() - 1]
+        }
+
+        // Figure 4:
+        // let {u1..uk} = {u in e | kappa[u] = undef}
+        // emit hypotheses ss kappa[ui <- fixed]
+        fix_unknowns(self.state, us)
+
+        let next = self.emit_hypotheses(ss)
+        let emit_uk = emit_final_call(self.state, self.env, se, uk, next)
+        us
+        .filter(u => u != uk)
+        .rev_fold(init=emit_uk, (acc, u) => {
+          Bind(Do, self.env.name_of_unknown(u), Arbitrary, acc)
+        })
+      }
     }
   }
 }
@@ -111,5 +104,6 @@ pub fn emit_hypotheses_from_unify(
   hypotheses : Array[@spec.HypothesisSpec],
   tail : GenNode,
 ) -> GenNode raise GenCompileError {
-  emit_hypotheses_from(state, env, hypotheses, 0, tail)
+  let ctx : HypothesisEmitContext = { state, env, tail }
+  ctx.emit_hypotheses(hypotheses[:])
 }

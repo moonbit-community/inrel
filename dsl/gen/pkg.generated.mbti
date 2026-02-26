@@ -8,9 +8,9 @@ import {
 }
 
 // Values
-pub fn compile_constructor_case(@spec.RelationSpec, @spec.ConstructorSpec, options? : CompileOptions) -> WeightedCaseAst? raise GenCompileError
+pub fn compile_constructor_case(@spec.RelationSpec, @spec.ConstructorSpec, options? : CompileOptions) -> WeightedCaseAst? raise
 
-pub fn compile_relation_to_bounded_generator(@spec.RelationSpec, options? : CompileOptions) -> BoundedGeneratorAst raise GenCompileError
+pub fn compile_relation_to_bounded_generator(@spec.RelationSpec, options? : CompileOptions) -> BoundedGeneratorAst raise
 
 pub fn default_compile_options() -> CompileOptions
 
@@ -92,12 +92,12 @@ pub impl Show for GuardAst
 pub impl ToJson for GuardAst
 
 pub(all) struct HypothesisEmitEnv {
-  relation_name : String
+  r_name : String
   aux_name : String
-  input_positions : Array[Int]
-  output_positions : Array[Int]
-  var_unknowns : @hashmap.HashMap[String, Int]
-  unknown_names : @hashmap.HashMap[Int, String]
+  in_pos : Array[Int]
+  out_pos : Array[Int]
+  x_to_u : @hashmap.HashMap[String, Int]
+  u_to_name : @hashmap.HashMap[Int, String]
 }
 pub impl Eq for HypothesisEmitEnv
 

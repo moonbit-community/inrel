@@ -68,7 +68,7 @@ fn hypothesis_unknowns(
 }
 
 ///|
-fn undefined_unknowns_in_hypothesis(
+fn undef_unknowns(
   state : @unify.UnifyState,
   env : HypothesisEmitEnv,
   hypothesis : @spec.HypothesisSpec,
@@ -193,7 +193,16 @@ fn hypothesis_expr(
 }
 
 ///|
-fn choose_recursive_target(
+fn check_expr(
+  state : @unify.UnifyState,
+  env : HypothesisEmitEnv,
+  hypothesis : @spec.HypothesisSpec,
+) -> ExprAst raise GenCompileError {
+  hypothesis_expr(state, env, hypothesis, -1, "")
+}
+
+///|
+fn choose_uk(
   state : @unify.UnifyState,
   env : HypothesisEmitEnv,
   hypothesis : @spec.HypothesisSpec,
@@ -201,8 +210,8 @@ fn choose_recursive_target(
 ) -> @unify.Unknown? raise GenCompileError {
   match hypothesis {
     @spec.RelCall(name, args) => {
-      guard name == env.relation_name else { None }
-      for pos in env.output_positions {
+      guard name == env.r_name else { None }
+      for pos in env.out_pos {
         guard pos >= 0 && pos < args.length() else { continue }
         guard direct_var_unknown(state, env, args[pos]) is Some(unknown) else {
           continue
@@ -223,7 +232,7 @@ fn recursive_source(
   env : HypothesisEmitEnv,
   args : Array[@spec.Term],
 ) -> BindSourceAst raise GenCompileError {
-  let call_args = env.input_positions.map(pos => {
+  let call_args = env.in_pos.map(pos => {
     guard pos >= 0 && pos < args.length() else {
       fail_gen("Recursive call input index out of bounds: \{pos}")
     }
@@ -241,11 +250,8 @@ fn final_call_source(
 ) -> BindSourceAst raise GenCompileError {
   let target_name = env.name_of_unknown(target_unknown)
   match hypothesis {
-    @spec.RelCall(name, args) if name == env.relation_name => {
-      let target_is_recursive_output = env.output_positions.fold(init=false, (
-        acc,
-        pos,
-      ) => {
+    @spec.RelCall(name, args) if name == env.r_name => {
+      let target_is_recursive_output = env.out_pos.fold(init=false, (acc, pos) => {
         if acc || pos < 0 || pos >= args.length() {
           acc
         } else {
@@ -270,4 +276,32 @@ fn final_call_source(
         hypothesis_expr(state, env, hypothesis, target_unknown, target_name),
       )
   }
+}
+
+///|
+fn fix_unknowns(
+  state : @unify.UnifyState,
+  us : Array[@unify.Unknown],
+) -> Unit raise GenCompileError {
+  us.each(u => {
+    state.update_constraint(u, @unify.range_fixed()) catch {
+      err =>
+        fail_gen(
+          "Failed to fix unknown u\{u} while emitting hypotheses: \{err}",
+        )
+    }
+  })
+}
+
+///|
+fn emit_final_call(
+  state : @unify.UnifyState,
+  env : HypothesisEmitEnv,
+  hypothesis : @spec.HypothesisSpec,
+  uk : @unify.Unknown,
+  next : GenNode,
+) -> GenNode raise GenCompileError {
+  let uk_name = env.name_of_unknown(uk)
+  let source = final_call_source(state, env, hypothesis, uk)
+  Bind(DoM, uk_name, source, next)
 }

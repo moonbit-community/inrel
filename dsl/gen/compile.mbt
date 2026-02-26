@@ -12,22 +12,23 @@ pub fn default_compile_options() -> CompileOptions {
 }
 
 ///|
-fn c_has_recursive_hypothesis(
-  relation_name : String,
+fn has_recursive_hypothesis(
+  r_name : String,
   ctor_spec : @spec.ConstructorSpec,
 ) -> Bool {
   for hypothesis in ctor_spec.hypotheses {
-    match hypothesis {
-      @spec.RelCall(name, _) if name == relation_name => return true
-      _ => ()
+    guard hypothesis is @spec.RelCall(name, _) && name == r_name else {
+      continue
     }
+    break true
+  } nobreak {
+    false
   }
-  false
 }
 
 ///|
-fn c_build_constructor_state(
-  relation : @spec.RelationSpec,
+fn init_constructor_state(
+  rel : @spec.RelationSpec,
   ctor_spec : @spec.ConstructorSpec,
 ) -> (
   @unify.UnifyState,
@@ -35,37 +36,37 @@ fn c_build_constructor_state(
   @ihashmap.HashMap[String, @unify.Unknown],
   @ihashmap.HashMap[@unify.Unknown, String],
 ) {
-  let constraints : Map[@unify.Unknown, @unify.Range] = {}
-  let unknowns : Array[@unify.Unknown] = []
-  let param_unknowns : Array[@unify.Unknown] = []
-  let mut var_unknowns : @ihashmap.HashMap[String, @unify.Unknown] = @ihashmap.HashMap::new()
-  let mut unknown_names : @ihashmap.HashMap[@unify.Unknown, String] = @ihashmap.HashMap::new()
+  let kappa : Map[@unify.Unknown, @unify.Range] = {}
+  let us : Array[@unify.Unknown] = []
+  let param_us : Array[@unify.Unknown] = []
+  let mut x_to_u : @ihashmap.HashMap[String, @unify.Unknown] = @ihashmap.HashMap::new()
+  let mut u_to_name : @ihashmap.HashMap[@unify.Unknown, String] = @ihashmap.HashMap::new()
 
-  let mut next_unknown = 0
-  for p in relation.params {
-    let unknown = next_unknown
-    next_unknown += 1
-    unknowns.push(unknown)
-    param_unknowns.push(unknown)
-    var_unknowns = var_unknowns.add(p.name, unknown)
-    unknown_names = unknown_names.add(unknown, p.name)
+  let mut next_u = 0
+  for p in rel.params {
+    let u = next_u
+    next_u += 1
+    us.push(u)
+    param_us.push(u)
+    x_to_u = x_to_u.add(p.name, u)
+    u_to_name = u_to_name.add(u, p.name)
     match p.mode {
-      @spec.In => constraints[unknown] = @unify.range_fixed()
-      @spec.Out => constraints[unknown] = @unify.range_undef(p.ty)
+      @spec.In => kappa[u] = @unify.range_fixed()
+      @spec.Out => kappa[u] = @unify.range_undef(p.ty)
     }
   }
 
   for b in ctor_spec.binders {
-    let unknown = next_unknown
-    next_unknown += 1
-    unknowns.push(unknown)
-    var_unknowns = var_unknowns.add(b.name, unknown)
-    unknown_names = unknown_names.add(unknown, b.name)
-    constraints[unknown] = @unify.range_undef(b.ty)
+    let u = next_u
+    next_u += 1
+    us.push(u)
+    x_to_u = x_to_u.add(b.name, u)
+    u_to_name = u_to_name.add(u, b.name)
+    kappa[u] = @unify.range_undef(b.ty)
   }
 
-  let st = @unify.UnifyState::new(constraints, unknowns, next_unknown~)
-  (st, param_unknowns, var_unknowns, unknown_names)
+  let st0 = @unify.UnifyState::new(kappa, us, next_unknown=next_u)
+  (st0, param_us, x_to_u, u_to_name)
 }
 
 ///|
@@ -74,57 +75,55 @@ fn c_build_constructor_state(
 /// Returns `None` when constructor unification fails (constructor not inhabitable
 /// under the current mode assignment), following Figure 4's failure branch.
 pub fn compile_constructor_case(
-  relation : @spec.RelationSpec,
+  rel : @spec.RelationSpec,
   ctor_spec : @spec.ConstructorSpec,
   options? : CompileOptions = default_compile_options(),
-) -> WeightedCaseAst? raise GenCompileError {
-  guard ctor_spec.conclusion.length() == relation.params.length() else {
+) -> WeightedCaseAst? raise {
+  guard ctor_spec.conclusion.length() == rel.params.length() else {
     fail_gen(
-      "Constructor \{ctor_spec.name} arity mismatch: conclusion has \{ctor_spec.conclusion.length()} terms, relation has \{relation.params.length()} params",
+      "Constructor \{ctor_spec.name} arity mismatch: conclusion has \{ctor_spec.conclusion.length()} terms, relation has \{rel.params.length()} params",
     )
   }
 
-  let (st, param_unknowns, var_unknowns, unknown_names) = c_build_constructor_state(
-    relation, ctor_spec,
+  let (st0, param_us, x_to_u, u_to_name) = init_constructor_state(
+    rel, ctor_spec,
   )
 
-  for i in 0..<relation.params.length() {
-    let lhs_range = c_term_to_range(ctor_spec.conclusion[i], var_unknowns)
-    let rhs_unknown = param_unknowns[i]
-    let unify_result : Result[Unit, @unify.UnificationError] = try? st.unify(
+  for i in 0..<rel.params.length() {
+    let lhs_range = term_to_range(ctor_spec.conclusion[i], x_to_u)
+    let rhs_u = param_us[i]
+    let unify_result : Result[Unit, @unify.UnificationError] = try? st0.unify(
       lhs_range,
-      @unify.range_link(rhs_unknown),
+      @unify.range_link(rhs_u),
     )
     guard unify_result is Ok(_) else { return None }
   }
 
-  let output_positions = relation.output_positions()
-  let output_unknowns = output_positions.map(pos => param_unknowns[pos])
+  let out_pos = rel.output_positions()
+  let out_us = out_pos.map(pos => param_us[pos])
   let marker_name = "__final_assembly_marker"
   let marker_tail : GenNode = RetSome([Var(marker_name)])
 
   let hypothesis_env : HypothesisEmitEnv = {
-    relation_name: relation.name,
+    r_name: rel.name,
     aux_name: options.aux_name,
-    input_positions: relation.input_positions(),
-    output_positions,
-    var_unknowns,
-    unknown_names,
+    in_pos: rel.input_positions(),
+    out_pos,
+    x_to_u,
+    u_to_name,
   }
 
-  let with_hypotheses = emit_hypotheses_from_unify(
-    st,
+  let g_after_hyp = emit_hypotheses_from_unify(
+    st0,
     hypothesis_env,
     ctor_spec.hypotheses,
     marker_tail,
   )
-  let final_assembly = c_wrap_final_assembly(st, unknown_names, output_unknowns)
-  let with_final = c_replace_tail_marker(
-    with_hypotheses, marker_name, final_assembly,
-  )
-  let with_equalities = c_wrap_equalities(st, unknown_names, with_final)
-  let with_patterns = c_wrap_patterns(st, unknown_names, with_equalities)
-  Some({ weight: ctor_spec.weight, body: with_patterns })
+  let g_final = emit_final_assembly(st0, u_to_name, out_us)
+  let g_with_final = replace_tail_marker(g_after_hyp, marker_name, g_final)
+  let g_with_eq = emit_equalities(st0, u_to_name, g_with_final)
+  let g_with_pat = emit_patterns(st0, u_to_name, g_with_eq)
+  Some({ weight: ctor_spec.weight, body: g_with_pat })
 }
 
 ///|
@@ -133,32 +132,29 @@ pub fn compile_constructor_case(
 /// Zero-size branch includes only non-recursive constructors; successor-size
 /// branch includes all inhabitable constructors.
 pub fn compile_relation_to_bounded_generator(
-  relation : @spec.RelationSpec,
+  rel : @spec.RelationSpec,
   options? : CompileOptions = default_compile_options(),
-) -> BoundedGeneratorAst raise GenCompileError {
-  let succ_cases : Array[WeightedCaseAst] = []
-  let zero_cases : Array[WeightedCaseAst] = []
+) -> BoundedGeneratorAst raise {
+  let succ_g : Array[WeightedCaseAst] = []
+  let zero_g : Array[WeightedCaseAst] = []
 
-  for ctor_spec in relation.constructors {
-    guard compile_constructor_case(relation, ctor_spec, options~)
-      is Some(case_ast) else {
+  for ctor_spec in rel.constructors {
+    guard compile_constructor_case(rel, ctor_spec, options~) is Some(case_ast) else {
       continue
     }
-    succ_cases.push(case_ast)
-    if !c_has_recursive_hypothesis(relation.name, ctor_spec) {
-      zero_cases.push(case_ast)
+    succ_g.push(case_ast)
+    if !has_recursive_hypothesis(rel.name, ctor_spec) {
+      zero_g.push(case_ast)
     }
   }
 
-  let input_names = relation
-    .input_positions()
-    .map(pos => relation.params[pos].name)
+  let input_names = rel.input_positions().map(pos => rel.params[pos].name)
   {
     aux_name: options.aux_name,
     size_var: options.size_var,
     inputs: input_names,
     succ_size_var: options.succ_size_var,
-    zero_case: Backtrack(zero_cases),
-    succ_case: Backtrack(succ_cases),
+    zero_case: Backtrack(zero_g),
+    succ_case: Backtrack(succ_g),
   }
 }
