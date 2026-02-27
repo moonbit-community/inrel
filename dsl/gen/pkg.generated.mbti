@@ -20,6 +20,10 @@ pub fn compile_relation_to_moonbit_generator(@spec.RelationSpec, options? : Comp
 
 pub fn default_compile_options() -> CompileOptions
 
+pub fn[T] den_env_builder((T, T) -> Bool, (DenValue[T]) -> T? raise GenRuntimeError) -> DenotationEnvBuilder[T]
+
+pub fn[T : Eq] den_out_env_builder() -> DenotationEnvBuilder[T]
+
 pub fn emit_hypotheses_from_unify(@unify.UnifyState, HypothesisEmitEnv, Array[@spec.HypothesisSpec], GenNode) -> GenNode raise GenCompileError
 
 pub fn runtime_denotation_env() -> DenotationEnv[RuntimeValue]
@@ -76,6 +80,17 @@ pub impl Eq for CompileOptions
 pub impl Show for CompileOptions
 pub impl ToJson for CompileOptions
 
+pub(all) struct DenCallCase[T] {
+  name : String
+  run : (Array[DenValue[T]]) -> DenValue[T]? raise GenRuntimeError
+}
+
+pub(all) struct DenCtorCase[T] {
+  name : String
+  build_out : (Array[DenValue[T]]) -> T?
+  split : (T) -> Array[DenValue[T]]?
+}
+
 pub(all) enum DenValue[T] {
   DenInt(Int)
   DenBool(Bool)
@@ -93,6 +108,20 @@ pub(all) struct DenotationEnv[T] {
   eq : (DenValue[T], DenValue[T]) -> Bool raise GenRuntimeError
   to_output : (DenValue[T]) -> T? raise GenRuntimeError
 }
+
+pub(all) struct DenotationEnvBuilder[T] {
+  ctor_cases : Array[DenCtorCase[T]]
+  call_cases : Array[DenCallCase[T]]
+  arbitrary_case : (String, @spec.TypeRef?, Int, @splitmix.RandomState) -> DenValue[T]? raise GenRuntimeError
+  eq_out : (T, T) -> Bool
+  to_output : (DenValue[T]) -> T? raise GenRuntimeError
+}
+pub fn[T] DenotationEnvBuilder::build(Self[T]) -> DenotationEnv[T]
+pub fn[T] DenotationEnvBuilder::with_arbitrary(Self[T], (String, @spec.TypeRef?, Int, @splitmix.RandomState) -> DenValue[T]? raise GenRuntimeError) -> Self[T]
+pub fn[T] DenotationEnvBuilder::with_call(Self[T], String, (Array[DenValue[T]]) -> DenValue[T]? raise GenRuntimeError) -> Self[T]
+pub fn[T] DenotationEnvBuilder::with_ctor(Self[T], String, (Array[DenValue[T]]) -> T?, (T) -> Array[DenValue[T]]?) -> Self[T]
+pub fn[T] DenotationEnvBuilder::with_eq_out(Self[T], (T, T) -> Bool) -> Self[T]
+pub fn[T] DenotationEnvBuilder::with_to_output(Self[T], (DenValue[T]) -> T? raise GenRuntimeError) -> Self[T]
 
 pub(all) enum ExprAst {
   Var(String)

@@ -107,64 +107,73 @@ test "runtime eval: run_one2 supports typed output decoding" {
 }
 
 ///|
-fn complete_tree_assert(tree: Tree) -> Bool {
+fn complete_tree_assert(tree : Tree) -> Bool {
   match tree {
     Leaf => true
     Node(_, Leaf, Leaf) => true
-    Node(_, left, right) => {
+    Node(_, left, right) =>
       complete_tree_assert(left) && complete_tree_assert(right)
-    }
   }
 }
 
-fn bst_tree_assert(tree: Tree, lo: Int, hi: Int) -> Bool {
+///|
+fn bst_tree_assert(tree : Tree, lo : Int, hi : Int) -> Bool {
   match tree {
     Leaf => true
     Node(x, left, right) =>
-      lo < x && x < hi && bst_tree_assert(left, lo, x) && bst_tree_assert(right, x, hi)
+      lo < x &&
+      x < hi &&
+      bst_tree_assert(left, lo, x) &&
+      bst_tree_assert(right, x, hi)
   }
 }
 
 ///|
 fn tree_denotation_env() -> DenotationEnv[Tree] {
-  {
-    use_ctor: (name, args) => {
-      match (name, args) {
-        ("Leaf", []) => Some(DenOut(Leaf))
-        ("Node", [DenInt(x), DenOut(left), DenOut(right)]) =>
-          Some(DenOut(Node(x, left, right)))
+  den_out_env_builder()
+  .with_ctor(
+    "Leaf",
+    args => {
+      match args {
+        [] => Some(Leaf)
         _ => None
       }
     },
-    split_ctor: (value, name) => {
-      match (value, name) {
-        (DenOut(Leaf), "Leaf") => Some([])
-        (DenOut(Node(x, left, right)), "Node") =>
-          Some([DenInt(x), DenOut(left), DenOut(right)])
+    tree => {
+      match tree {
+        Leaf => Some([])
         _ => None
       }
     },
-    call: (_name, _args) => None,
-    arbitrary: (_bind_name, ty, size, rs) => {
-      match ty {
-        Some(@spec.Named("Tree")) =>
-          if size <= 0 || rs.next_positive_int() % 3 == 0 {
-            Some(DenOut(Leaf))
-          } else {
-            let x : Int = @quickcheck.Arbitrary::arbitrary(size, rs)
-            Some(DenOut(Node(x, Leaf, Leaf)))
-          }
+  )
+  .with_ctor(
+    "Node",
+    args => {
+      match args {
+        [DenInt(x), DenOut(left), DenOut(right)] => Some(Node(x, left, right))
         _ => None
       }
     },
-    eq: (lhs, rhs) => den_eq_with((l, r) => l == r, lhs, rhs),
-    to_output: value => {
-      match value {
-        DenOut(tree) => Some(tree)
+    tree => {
+      match tree {
+        Node(x, left, right) => Some([DenInt(x), DenOut(left), DenOut(right)])
         _ => None
       }
     },
-  }
+  )
+  .with_arbitrary((_bind_name, ty, size, rs) => {
+    match ty {
+      Some(@spec.Named("Tree")) =>
+        if size <= 0 || rs.next_positive_int() % 3 == 0 {
+          Some(DenOut(Leaf))
+        } else {
+          let x : Int = @quickcheck.Arbitrary::arbitrary(size, rs)
+          Some(DenOut(Node(x, Leaf, Leaf)))
+        }
+      _ => None
+    }
+  })
+  .build()
 }
 
 ///|
