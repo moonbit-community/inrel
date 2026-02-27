@@ -4,7 +4,9 @@ package "CAIMEOX/inrel/dsl/gen"
 import {
   "CAIMEOX/inrel/dsl/spec",
   "CAIMEOX/inrel/dsl/unify",
+  "moonbitlang/core/debug",
   "moonbitlang/core/immut/hashmap",
+  "moonbitlang/core/quickcheck/splitmix",
 }
 
 // Values
@@ -12,13 +14,23 @@ pub fn compile_constructor_case(@spec.RelationSpec, @spec.ConstructorSpec, optio
 
 pub fn compile_relation_to_bounded_generator(@spec.RelationSpec, options? : CompileOptions) -> BoundedGeneratorAst raise
 
+pub fn[T] compile_relation_to_gen(@spec.RelationSpec, DenotationEnv[T], options? : CompileOptions) -> Gen[T] raise
+
+pub fn compile_relation_to_moonbit_generator(@spec.RelationSpec, options? : CompileOptions) -> MoonBitGenerator raise
+
 pub fn default_compile_options() -> CompileOptions
 
 pub fn emit_hypotheses_from_unify(@unify.UnifyState, HypothesisEmitEnv, Array[@spec.HypothesisSpec], GenNode) -> GenNode raise GenCompileError
 
+pub fn runtime_denotation_env() -> DenotationEnv[RuntimeValue]
+
 // Errors
 pub(all) suberror GenCompileError {
   GenCompileError(String)
+}
+
+pub(all) suberror GenRuntimeError {
+  GenRuntimeError(String)
 }
 
 // Types and methods
@@ -28,16 +40,18 @@ pub(all) enum BindFlavor {
 }
 pub impl Eq for BindFlavor
 pub impl ToJson for BindFlavor
+pub impl @debug.Debug for BindFlavor
 
 pub(all) enum BindSourceAst {
   Arbitrary
   ArbitraryST(String, ExprAst)
-  RecursiveCall(String, Array[String])
+  RecursiveCall(String, Array[ExprAst])
   Expr(String)
 }
 pub impl Eq for BindSourceAst
 pub impl Show for BindSourceAst
 pub impl ToJson for BindSourceAst
+pub impl @debug.Debug for BindSourceAst
 
 pub(all) struct BoundedGeneratorAst {
   aux_name : String
@@ -51,6 +65,7 @@ pub fn BoundedGeneratorAst::to_paper_string(Self) -> String
 pub impl Eq for BoundedGeneratorAst
 pub impl Show for BoundedGeneratorAst
 pub impl ToJson for BoundedGeneratorAst
+pub impl @debug.Debug for BoundedGeneratorAst
 
 pub(all) struct CompileOptions {
   aux_name : String
@@ -61,6 +76,24 @@ pub impl Eq for CompileOptions
 pub impl Show for CompileOptions
 pub impl ToJson for CompileOptions
 
+pub(all) enum DenValue[T] {
+  DenInt(Int)
+  DenBool(Bool)
+  DenString(String)
+  DenOut(T)
+  DenCtor(String, Array[DenValue[T]])
+  DenTuple(Array[DenValue[T]])
+}
+
+pub(all) struct DenotationEnv[T] {
+  use_ctor : (String, Array[DenValue[T]]) -> DenValue[T]? raise GenRuntimeError
+  split_ctor : (DenValue[T], String) -> Array[DenValue[T]]? raise GenRuntimeError
+  call : (String, Array[DenValue[T]]) -> DenValue[T]? raise GenRuntimeError
+  arbitrary : (String, @spec.TypeRef?, Int, @splitmix.RandomState) -> DenValue[T]? raise GenRuntimeError
+  eq : (DenValue[T], DenValue[T]) -> Bool raise GenRuntimeError
+  to_output : (DenValue[T]) -> T? raise GenRuntimeError
+}
+
 pub(all) enum ExprAst {
   Var(String)
   Ctor(String, Array[ExprAst])
@@ -69,6 +102,17 @@ pub(all) enum ExprAst {
 pub impl Eq for ExprAst
 pub impl Show for ExprAst
 pub impl ToJson for ExprAst
+pub impl @debug.Debug for ExprAst
+
+pub(all) struct Gen[T] {
+  generator : MoonBitGenerator
+  env : DenotationEnv[T]
+}
+pub fn[T] Gen::run(Self[T], Int, Array[DenValue[T]], @splitmix.RandomState) -> Array[T]? raise GenRuntimeError
+pub fn[T, In1 : RuntimeEncode] Gen::run1(Self[T], Int, In1, @splitmix.RandomState) -> T? raise GenRuntimeError
+pub fn[T, In1 : RuntimeEncode, In2 : RuntimeEncode] Gen::run2(Self[T], Int, In1, In2, @splitmix.RandomState) -> T? raise GenRuntimeError
+pub fn[T] Gen::run_one(Self[T], Int, Array[DenValue[T]], @splitmix.RandomState) -> T? raise GenRuntimeError
+pub fn[T] Gen::run_values(Self[T], Int, Array[DenValue[T]], @splitmix.RandomState) -> Array[DenValue[T]]? raise GenRuntimeError
 
 pub(all) enum GenNode {
   RetNone
@@ -82,6 +126,7 @@ pub fn GenNode::to_paper_string(Self) -> String
 pub impl Eq for GenNode
 pub impl Show for GenNode
 pub impl ToJson for GenNode
+pub impl @debug.Debug for GenNode
 
 pub(all) enum GuardAst {
   Eq(ExprAst, ExprAst)
@@ -90,6 +135,7 @@ pub(all) enum GuardAst {
 pub impl Eq for GuardAst
 pub impl Show for GuardAst
 pub impl ToJson for GuardAst
+pub impl @debug.Debug for GuardAst
 
 pub(all) struct HypothesisEmitEnv {
   r_name : String
@@ -101,6 +147,23 @@ pub(all) struct HypothesisEmitEnv {
 }
 pub impl Eq for HypothesisEmitEnv
 
+pub(all) struct MoonBitGenerator {
+  aux_name : String
+  input_names : Array[String]
+  output_arity : Int
+  var_types : @hashmap.HashMap[String, @spec.TypeRef]
+  zero_case : GenNode
+  succ_case : GenNode
+}
+pub fn[T] MoonBitGenerator::eval(Self, DenotationEnv[T]) -> Gen[T]
+pub fn MoonBitGenerator::run(Self, Int, Array[RuntimeValue], @splitmix.RandomState) -> Array[RuntimeValue]? raise GenRuntimeError
+pub fn[Out : RuntimeDecode] MoonBitGenerator::run_as(Self, Int, Array[RuntimeValue], @splitmix.RandomState) -> Array[Out]? raise GenRuntimeError
+pub fn MoonBitGenerator::run_one(Self, Int, Array[RuntimeValue], @splitmix.RandomState) -> RuntimeValue? raise GenRuntimeError
+pub fn[In1 : RuntimeEncode, Out : RuntimeDecode] MoonBitGenerator::run_one1(Self, Int, In1, @splitmix.RandomState) -> Out? raise GenRuntimeError
+pub fn[In1 : RuntimeEncode, In2 : RuntimeEncode, Out : RuntimeDecode] MoonBitGenerator::run_one2(Self, Int, In1, In2, @splitmix.RandomState) -> Out? raise GenRuntimeError
+pub fn[Out : RuntimeDecode] MoonBitGenerator::run_one_as(Self, Int, Array[RuntimeValue], @splitmix.RandomState) -> Out? raise GenRuntimeError
+pub fn MoonBitGenerator::run_seeded(Self, Int, Array[RuntimeValue], seed? : UInt64) -> Array[RuntimeValue]? raise GenRuntimeError
+
 pub(all) enum PatternAst {
   PVar(String)
   PCtor(String, Array[PatternAst])
@@ -108,6 +171,21 @@ pub(all) enum PatternAst {
 pub impl Eq for PatternAst
 pub impl Show for PatternAst
 pub impl ToJson for PatternAst
+pub impl @debug.Debug for PatternAst
+
+pub(all) enum RuntimeValue {
+  RuntimeInt(Int)
+  RuntimeBool(Bool)
+  RuntimeString(String)
+  RuntimeCtor(String, Array[RuntimeValue])
+  RuntimeTuple(Array[RuntimeValue])
+}
+pub impl RuntimeDecode for RuntimeValue
+pub impl RuntimeEncode for RuntimeValue
+pub impl Eq for RuntimeValue
+pub impl Show for RuntimeValue
+pub impl ToJson for RuntimeValue
+pub impl @debug.Debug for RuntimeValue
 
 pub(all) struct WeightedCaseAst {
   weight : Int
@@ -115,8 +193,22 @@ pub(all) struct WeightedCaseAst {
 }
 pub impl Eq for WeightedCaseAst
 pub impl ToJson for WeightedCaseAst
+pub impl @debug.Debug for WeightedCaseAst
 
 // Type aliases
 
 // Traits
+pub(open) trait RuntimeDecode {
+  from_runtime(RuntimeValue) -> Self?
+}
+pub impl RuntimeDecode for Bool
+pub impl RuntimeDecode for Int
+pub impl RuntimeDecode for String
+
+pub(open) trait RuntimeEncode {
+  to_runtime(Self) -> RuntimeValue
+}
+pub impl RuntimeEncode for Bool
+pub impl RuntimeEncode for Int
+pub impl RuntimeEncode for String
 

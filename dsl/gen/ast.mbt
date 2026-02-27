@@ -6,7 +6,7 @@
 pub(all) enum PatternAst {
   PVar(String)
   PCtor(String, Array[PatternAst])
-} derive(Eq, ToJson)
+} derive(Eq, ToJson, Debug)
 
 ///|
 /// Expression AST used by generator code nodes.
@@ -14,7 +14,7 @@ pub(all) enum ExprAst {
   Var(String)
   Ctor(String, Array[ExprAst])
   Call(String, Array[ExprAst])
-} derive(Eq, ToJson)
+} derive(Eq, ToJson, Debug)
 
 ///|
 /// Boolean guard/check nodes for generated code.
@@ -24,7 +24,7 @@ pub(all) enum ExprAst {
 pub(all) enum GuardAst {
   Eq(ExprAst, ExprAst)
   Decidable(ExprAst)
-} derive(Eq, ToJson)
+} derive(Eq, ToJson, Debug)
 
 ///|
 /// Monadic bind flavor in emitted code.
@@ -34,16 +34,16 @@ pub(all) enum GuardAst {
 pub(all) enum BindFlavor {
   Do
   DoM
-} derive(Eq, ToJson)
+} derive(Eq, ToJson, Debug)
 
 ///|
 /// Source expression for a bind in emitted generator code.
 pub(all) enum BindSourceAst {
   Arbitrary
   ArbitraryST(String, ExprAst)
-  RecursiveCall(String, Array[String])
+  RecursiveCall(String, Array[ExprAst])
   Expr(String)
-} derive(Eq, ToJson)
+} derive(Eq, ToJson, Debug)
 
 ///|
 /// Weighted branch used in `backtrack`.
@@ -53,7 +53,7 @@ pub(all) enum BindSourceAst {
 pub(all) struct WeightedCaseAst {
   weight : Int
   body : GenNode
-} derive(Eq, ToJson)
+} derive(Eq, ToJson, Debug)
 
 ///|
 /// AST for generated code shape from Sections 4.3-4.7.
@@ -64,7 +64,7 @@ pub(all) enum GenNode {
   MatchPattern(String, PatternAst, GenNode, GenNode)
   IfGuard(GuardAst, GenNode, GenNode)
   Bind(BindFlavor, String, BindSourceAst, GenNode)
-} derive(Eq, ToJson)
+} derive(Eq, ToJson, Debug)
 
 ///|
 /// Top-level bounded generator AST.
@@ -78,7 +78,7 @@ pub(all) struct BoundedGeneratorAst {
   succ_size_var : String
   zero_case : GenNode
   succ_case : GenNode
-} derive(Eq, ToJson)
+} derive(Eq, ToJson, Debug)
 
 ///|
 fn indent(level : Int) -> String {
@@ -179,7 +179,7 @@ fn BindSourceAst::render(self : BindSourceAst) -> String {
       if args.is_empty() {
         name
       } else {
-        let args_text = args.join(" ")
+        let args_text = args.map(arg => arg.render()).join(" ")
         "\{name} \{args_text}"
       }
     Expr(code) => code

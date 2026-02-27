@@ -11,11 +11,11 @@ test "paper-like bounded generator rendering: complete-style" {
     Bind(
       DoM,
       "l",
-      RecursiveCall("aux_arb", ["n"]),
+      RecursiveCall("aux_arb", [Var("n")]),
       Bind(
         DoM,
         "r",
-        RecursiveCall("aux_arb", ["n"]),
+        RecursiveCall("aux_arb", [Var("n")]),
         Bind(
           Do,
           "x",

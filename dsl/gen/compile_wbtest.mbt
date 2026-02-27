@@ -177,31 +177,64 @@ fn bst_relation_spec() -> @spec.RelationSpec {
 
 ///|
 test "compile pipeline derives nonempty tree generator from single constructor" {
-  let ast = try! compile_relation_to_bounded_generator(nonempty_relation_spec())
-  inspect(
-    ast.to_string(),
+  let ast : BoundedGeneratorAst = try! compile_relation_to_bounded_generator(
+    nonempty_relation_spec(),
+  )
+  debug_inspect(
+    ast,
     content=(
-      #|Fixpoint aux_arb size :=
-      #|  match size with
-      #|  | O =>
-      #|    backtrack [
-      #|      (1,
-      #|        do! x <- arbitrary;
-      #|        do! l <- arbitrary;
-      #|        do! r <- arbitrary;
-      #|        ret (Some (Node x l r))
-      #|      )
-      #|    ]
-      #|  | S size' =>
-      #|    backtrack [
-      #|      (1,
-      #|        do! x <- arbitrary;
-      #|        do! l <- arbitrary;
-      #|        do! r <- arbitrary;
-      #|        ret (Some (Node x l r))
-      #|      )
-      #|    ]
-      #|  end.
+      #|{
+      #|  aux_name: "aux_arb",
+      #|  size_var: "size",
+      #|  inputs: [],
+      #|  succ_size_var: "size'",
+      #|  zero_case: Backtrack(
+      #|    [
+      #|      {
+      #|        weight: 1,
+      #|        body: Bind(
+      #|          Do,
+      #|          "x",
+      #|          Arbitrary,
+      #|          Bind(
+      #|            Do,
+      #|            "l",
+      #|            Arbitrary,
+      #|            Bind(
+      #|              Do,
+      #|              "r",
+      #|              Arbitrary,
+      #|              RetSome([Ctor("Node", [Var("x"), Var("l"), Var("r")])]),
+      #|            ),
+      #|          ),
+      #|        ),
+      #|      },
+      #|    ],
+      #|  ),
+      #|  succ_case: Backtrack(
+      #|    [
+      #|      {
+      #|        weight: 1,
+      #|        body: Bind(
+      #|          Do,
+      #|          "x",
+      #|          Arbitrary,
+      #|          Bind(
+      #|            Do,
+      #|            "l",
+      #|            Arbitrary,
+      #|            Bind(
+      #|              Do,
+      #|              "r",
+      #|              Arbitrary,
+      #|              RetSome([Ctor("Node", [Var("x"), Var("l"), Var("r")])]),
+      #|            ),
+      #|          ),
+      #|        ),
+      #|      },
+      #|    ],
+      #|  ),
+      #|}
     ),
   )
 }

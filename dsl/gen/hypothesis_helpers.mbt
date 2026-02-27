@@ -236,7 +236,7 @@ fn recursive_source(
     guard pos >= 0 && pos < args.length() else {
       fail_gen("Recursive call input index out of bounds: \{pos}")
     }
-    term_to_expr(state, env, args[pos], -1, "").to_string()
+    term_to_expr(state, env, args[pos], -1, "")
   })
   RecursiveCall(env.aux_name, call_args)
 }

@@ -7,6 +7,7 @@ Current status:
 - Core DSL abstractions are implemented in subpackages.
 - Figure 1 / Figure 4 generator assembly pipeline is implemented.
 - Automatic derive is intentionally out of scope for now.
+- Denotational Semantics tawards MoonBit functions
 
 Packages:
 
