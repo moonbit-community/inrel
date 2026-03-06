@@ -1,1 +1,5 @@
-
+import {
+  "moonbitlang/core/list" @list,
+  "moonbitlang/quickcheck" @qc,
+  "moonbitlang/core/quickcheck" @qc_core,
+} for "test"
