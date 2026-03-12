@@ -402,7 +402,7 @@ fn stlc_wt_relation_spec() -> @spec.RelationSpec {
       @spec.out_param("tm", @spec.ty("Tm")),
     ],
     [
-      @spec.constructor_forall1(
+      @spec.forall1(
         "WtLit",
         @spec.binder("k", @spec.ty("Nat")),
         k => {
@@ -415,7 +415,7 @@ fn stlc_wt_relation_spec() -> @spec.RelationSpec {
         },
         weight=1,
       ),
-      @spec.constructor_forall1(
+      @spec.forall1(
         "WtVar",
         @spec.binder("i", @spec.ty("Nat")),
         i => {
@@ -495,7 +495,7 @@ fn stlc_wt_relation_spec() -> @spec.RelationSpec {
         },
         weight=5,
       ),
-      @spec.constructor_forall3(
+      @spec.forall3(
         "WtAdd",
         @spec.binder("n", @spec.ty("Nat")),
         @spec.binder("lhs", @spec.ty("Tm")),
@@ -517,7 +517,7 @@ fn stlc_wt_relation_spec() -> @spec.RelationSpec {
         },
         weight=4,
       ),
-      @spec.constructor_forall3(
+      @spec.forall3(
         "WtMul",
         @spec.binder("n", @spec.ty("Nat")),
         @spec.binder("lhs", @spec.ty("Tm")),

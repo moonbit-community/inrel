@@ -141,7 +141,7 @@ pub fn constructor_scoped(
 
 ///|
 /// Scoped constructor helper for zero binders.
-pub fn constructor_forall0(
+pub fn forall0(
   name : String,
   build : () -> ConstructorBody,
   weight? : Int = 1,
@@ -152,7 +152,7 @@ pub fn constructor_forall0(
 
 ///|
 /// Scoped constructor helper for one binder.
-pub fn constructor_forall1(
+pub fn forall1(
   name : String,
   b1 : BinderSpec,
   build : (VarRef) -> ConstructorBody,
@@ -164,7 +164,7 @@ pub fn constructor_forall1(
 
 ///|
 /// Scoped constructor helper for two binders.
-pub fn constructor_forall2(
+pub fn forall2(
   name : String,
   b1 : BinderSpec,
   b2 : BinderSpec,
@@ -177,7 +177,7 @@ pub fn constructor_forall2(
 
 ///|
 /// Scoped constructor helper for three binders.
-pub fn constructor_forall3(
+pub fn forall3(
   name : String,
   b1 : BinderSpec,
   b2 : BinderSpec,
@@ -189,6 +189,31 @@ pub fn constructor_forall3(
   make_constructor(
     name,
     [b1, b2, b3],
+    built.hypotheses,
+    built.conclusion,
+    weight~,
+  )
+}
+
+///|
+pub fn forall4(
+  name : String,
+  b1 : BinderSpec,
+  b2 : BinderSpec,
+  b3 : BinderSpec,
+  b4 : BinderSpec,
+  build : (VarRef, VarRef, VarRef, VarRef) -> ConstructorBody,
+  weight? : Int = 1,
+) -> ConstructorSpec {
+  let built = build(
+    var_ref(b1.name),
+    var_ref(b2.name),
+    var_ref(b3.name),
+    var_ref(b4.name),
+  )
+  make_constructor(
+    name,
+    [b1, b2, b3, b4],
     built.hypotheses,
     built.conclusion,
     weight~,

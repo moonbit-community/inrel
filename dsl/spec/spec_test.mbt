@@ -15,7 +15,7 @@ test "relation mode partition follows in/out split" {
 
 ///|
 test "constructor helper defaults weight to one" {
-  let c = @spec.constructor_forall0("CompleteLeaf", () => {
+  let c = @spec.forall0("CompleteLeaf", () => {
     @spec.body([@spec.ctor("O", []), @spec.ctor("Leaf", [])])
   })
   inspect(c.weight, content="1")
@@ -46,7 +46,7 @@ test "relation show renders constructor and binders" {
     "nonempty",
     [@spec.make_param("tree", @spec.ty("Tree"), @spec.mode_out())],
     [
-      @spec.constructor_forall3(
+      @spec.forall3(
         "NonEmpty",
         @spec.binder("x", @spec.ty("Nat")),
         @spec.binder("l", @spec.ty("Tree")),
@@ -76,10 +76,10 @@ test "relation show renders hypotheses chain" {
       @spec.make_param("tree", @spec.ty("Tree"), @spec.mode_out()),
     ],
     [
-      @spec.constructor_forall0("BstLeaf", () => {
+      @spec.forall0("BstLeaf", () => {
         @spec.body([@spec.v("lo"), @spec.v("hi"), @spec.ctor("Leaf", [])])
       }),
-      @spec.constructor_forall3(
+      @spec.forall3(
         "BstNode",
         @spec.binder("x", @spec.ty("Nat")),
         @spec.binder("l", @spec.ty("Tree")),
@@ -118,7 +118,7 @@ test "builder forall helper lowers to relation spec" {
     "nonempty",
     [@spec.out_param("tree", @spec.ty("Tree"))],
     [
-      @spec.constructor_forall3(
+      @spec.forall3(
         "NonEmpty",
         @spec.binder("x", @spec.ty("Nat")),
         @spec.binder("l", @spec.ty("Tree")),
@@ -148,11 +148,9 @@ test "builder forall1 supports repeated variable usage" {
       @spec.out_param("tree", @spec.ty("Tree")),
     ],
     [
-      @spec.constructor_forall1(
-        "GoodLeaf",
-        @spec.binder("n", @spec.ty("Nat")),
-        n => @spec.body([n.term(), n.term(), @spec.ctor("Leaf", [])]),
-      ),
+      @spec.forall1("GoodLeaf", @spec.binder("n", @spec.ty("Nat")), n => {
+        @spec.body([n.term(), n.term(), @spec.ctor("Leaf", [])])
+      }),
     ],
   )
   inspect(

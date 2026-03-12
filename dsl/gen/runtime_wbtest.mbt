@@ -39,7 +39,7 @@ impl RuntimeDecode for Tree with from_runtime(value : RuntimeValue) {
 ///|
 test "runtime eval: complete depth=0 returns leaf in zero branch" {
   let runtime = try! compile_relation_to_moonbit_generator(
-    complete_relation_spec(),
+    complete_tree_spec(),
   )
   guard runtime.run_one(0, [RuntimeInt(0)], @splitmix.new(seed=7))
     is Some(RuntimeCtor("Leaf", [])) else {
@@ -50,7 +50,7 @@ test "runtime eval: complete depth=0 returns leaf in zero branch" {
 ///|
 test "runtime eval: typed decode to moonbit Tree" {
   let runtime = try! compile_relation_to_moonbit_generator(
-    complete_relation_spec(),
+    complete_tree_spec(),
   )
   let out : Tree? = runtime.run_one1(4, 2, @splitmix.new(seed=29))
   guard out is Some(Node(_, _, _)) else { fail("expected typed Tree::Node") }
@@ -59,7 +59,7 @@ test "runtime eval: typed decode to moonbit Tree" {
 ///|
 test "runtime eval: complete depth>0 uses recursive node branch" {
   let runtime = try! compile_relation_to_moonbit_generator(
-    complete_relation_spec(),
+    complete_tree_spec(),
   )
   guard runtime.run_one(4, [RuntimeInt(2)], @splitmix.new(seed=11))
     is Some(RuntimeCtor("Node", [_x, _l, _r])) else {
@@ -108,11 +108,22 @@ test "runtime eval: run_one2 supports typed output decoding" {
 
 ///|
 fn complete_tree_assert(tree : Tree) -> Bool {
+  complete_tree_depth(tree) is Some(_)
+}
+
+///|
+fn complete_tree_depth(tree : Tree) -> Int? {
   match tree {
-    Leaf => true
-    Node(_, Leaf, Leaf) => true
-    Node(_, left, right) =>
-      complete_tree_assert(left) && complete_tree_assert(right)
+    Leaf => Some(0)
+    Node(_, left, right) => {
+      guard complete_tree_depth(left) is Some(left_depth) else { None }
+      guard complete_tree_depth(right) is Some(right_depth) else { None }
+      if left_depth == right_depth {
+        Some(left_depth + 1)
+      } else {
+        None
+      }
+    }
   }
 }
 
@@ -179,7 +190,7 @@ fn tree_denotation_env() -> DenotationEnv[Tree] {
 ///|
 test "denotational eval: complete returns typed tree" {
   let gen = try! compile_relation_to_gen(
-    complete_relation_spec(),
+    complete_tree_spec(),
     tree_denotation_env(),
   )
   let out = gen.run1(4, 2, @splitmix.new(seed=29))
@@ -203,12 +214,12 @@ test "denotational eval: bst keeps bounds with typed output" {
 
 ///|
 test "denotational eval: runtime bridge env returns runtime tree" {
-  let gen = try! compile_relation_to_gen(
-    complete_relation_spec(),
+  let gen = compile_relation_to_gen(
+    complete_tree_spec(),
     tree_denotation_env(),
   )
   guard gen.run1(10, 5, @splitmix.new(seed=7)) is Some(tree)
-  assert_true(complete_tree_assert(tree))
+  assert_eq(complete_tree_depth(tree), Some(5))
   debug_inspect(
     tree,
     content=(

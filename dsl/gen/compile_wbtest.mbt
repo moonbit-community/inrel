@@ -1,32 +1,46 @@
 ///|
-fn complete_relation_spec() -> @spec.RelationSpec {
-  @spec.inductive(
+using @spec {
+  forall0,
+  forall1,
+  forall3,
+  forall4,
+  binder,
+  body,
+  ctor,
+  ty,
+  in_param,
+  out_param,
+  inductive,
+  pred,
+  type RelationSpec,
+  rel,
+  v
+}
+
+///|
+fn complete_tree_spec() -> RelationSpec {
+  inductive(
     "complete",
+    [in_param("depth", ty("Nat")), out_param("tree", ty("Tree"))],
     [
-      @spec.in_param("depth", @spec.ty("Nat")),
-      @spec.out_param("tree", @spec.ty("Tree")),
-    ],
-    [
-      @spec.constructor_forall0("CompleteLeaf", () => {
-        @spec.body([@spec.ctor("O", []), @spec.ctor("Leaf", [])])
-      }),
-      @spec.constructor_scoped(
+      forall0("CompleteLeaf", () => body([ctor("O", []), ctor("Leaf", [])])),
+      forall4(
         "CompleteNode",
-        [
-          @spec.binder("n", @spec.ty("Nat")),
-          @spec.binder("x", @spec.ty("Nat")),
-          @spec.binder("l", @spec.ty("Tree")),
-          @spec.binder("r", @spec.ty("Tree")),
-        ],
-        scope => {
-          let n = scope.v("n").term()
-          let x = scope.v("x").term()
-          let l = scope.v("l").term()
-          let r = scope.v("r").term()
-          @spec.body([@spec.ctor("S", [n]), @spec.ctor("Node", [x, l, r])], hypotheses=[
-            @spec.rel("complete", [n, l]),
-            @spec.rel("complete", [n, r]),
-          ])
+        binder("n", ty("Nat")),
+        binder("x", ty("Nat")),
+        binder("l", ty("Tree")),
+        binder("r", ty("Tree")),
+        (n, x, l, r) => {
+          body(
+            [
+              ctor("S", [n.term()]),
+              ctor("Node", [x.term(), l.term(), r.term()]),
+            ],
+            hypotheses=[
+              rel("complete", [n.term(), l.term()]),
+              rel("complete", [n.term(), r.term()]),
+            ],
+          )
         },
       ),
     ],
@@ -34,81 +48,58 @@ fn complete_relation_spec() -> @spec.RelationSpec {
 }
 
 ///|
-fn nonempty_relation_spec() -> @spec.RelationSpec {
-  @spec.inductive("nonempty", [@spec.out_param("tree", @spec.ty("Tree"))], [
-    @spec.constructor_forall3(
+fn nonempty_relation_spec() -> RelationSpec {
+  inductive("nonempty", [out_param("tree", ty("Tree"))], [
+    forall3(
       "NonEmpty",
-      @spec.binder("x", @spec.ty("Nat")),
-      @spec.binder("l", @spec.ty("Tree")),
-      @spec.binder("r", @spec.ty("Tree")),
-      (x, l, r) => {
-        @spec.body([@spec.ctor("Node", [x.term(), l.term(), r.term()])])
-      },
+      binder("x", ty("Nat")),
+      binder("l", ty("Tree")),
+      binder("r", ty("Tree")),
+      (x, l, r) => body([ctor("Node", [x.term(), l.term(), r.term()])]),
     ),
   ])
 }
 
 ///|
-fn half_complete_relation_spec() -> @spec.RelationSpec {
-  @spec.inductive(
+fn half_complete_relation_spec() -> RelationSpec {
+  inductive(
     "half_complete",
-    [
-      @spec.in_param("depth", @spec.ty("Nat")),
-      @spec.out_param("tree", @spec.ty("Tree")),
-    ],
-    [
-      @spec.constructor_forall0("CompleteLeaf'", () => {
-        @spec.body([@spec.ctor("O", []), @spec.ctor("Leaf", [])])
-      }),
-    ],
+    [in_param("depth", ty("Nat")), out_param("tree", ty("Tree"))],
+    [forall0("CompleteLeaf'", () => body([ctor("O", []), ctor("Leaf", [])]))],
   )
 }
 
 ///|
-fn good_stack_relation_spec() -> @spec.RelationSpec {
-  @spec.inductive(
+fn good_stack_relation_spec() -> RelationSpec {
+  inductive(
     "good_stack",
+    [in_param("n", ty("Nat")), out_param("stack", ty("Stack"))],
     [
-      @spec.in_param("n", @spec.ty("Nat")),
-      @spec.out_param("stack", @spec.ty("Stack")),
-    ],
-    [
-      @spec.constructor_forall0("GoodStackMty", () => {
-        @spec.body([@spec.ctor("O", []), @spec.ctor("Mty", [])])
-      }),
-      @spec.constructor_forall3(
+      forall0("GoodStackMty", () => body([ctor("O", []), ctor("Mty", [])])),
+      forall3(
         "GoodStackCons",
-        @spec.binder("n1", @spec.ty("Nat")),
-        @spec.binder("a", @spec.ty("Atom")),
-        @spec.binder("s1", @spec.ty("Stack")),
+        binder("n1", ty("Nat")),
+        binder("a", ty("Atom")),
+        binder("s1", ty("Stack")),
         (n1, a, s1) => {
-          @spec.body(
-            [
-              @spec.ctor("S", [n1.term()]),
-              @spec.ctor("Cons", [a.term(), s1.term()]),
-            ],
-            hypotheses=[
-              @spec.pred("good_atom", [a.term()]),
-              @spec.rel("good_stack", [n1.term(), s1.term()]),
-            ],
-          )
+          body([ctor("S", [n1.term()]), ctor("Cons", [a.term(), s1.term()])], hypotheses=[
+            pred("good_atom", [a.term()]),
+            rel("good_stack", [n1.term(), s1.term()]),
+          ])
         },
         weight=10,
       ),
-      @spec.constructor_forall3(
+      forall3(
         "GoodStackRet",
-        @spec.binder("n2", @spec.ty("Nat")),
-        @spec.binder("pc", @spec.ty("Atom")),
-        @spec.binder("s2", @spec.ty("Stack")),
+        binder("n2", ty("Nat")),
+        binder("pc", ty("Atom")),
+        binder("s2", ty("Stack")),
         (n2, pc, s2) => {
-          @spec.body(
-            [
-              @spec.ctor("S", [n2.term()]),
-              @spec.ctor("RetCons", [pc.term(), s2.term()]),
-            ],
+          body(
+            [ctor("S", [n2.term()]), ctor("RetCons", [pc.term(), s2.term()])],
             hypotheses=[
-              @spec.pred("good_atom", [pc.term()]),
-              @spec.rel("good_stack", [n2.term(), s2.term()]),
+              pred("good_atom", [pc.term()]),
+              rel("good_stack", [n2.term(), s2.term()]),
             ],
           )
         },
@@ -119,54 +110,46 @@ fn good_stack_relation_spec() -> @spec.RelationSpec {
 }
 
 ///|
-fn good_tree_relation_spec() -> @spec.RelationSpec {
-  @spec.inductive(
+fn good_tree_relation_spec() -> RelationSpec {
+  inductive(
     "goodTree",
     [
-      @spec.in_param("n1", @spec.ty("Nat")),
-      @spec.in_param("n2", @spec.ty("Nat")),
-      @spec.out_param("tree", @spec.ty("Tree")),
+      in_param("n1", ty("Nat")),
+      in_param("n2", ty("Nat")),
+      out_param("tree", ty("Tree")),
     ],
     [
-      @spec.constructor_forall1(
-        "GoodLeaf",
-        @spec.binder("n", @spec.ty("Nat")),
-        n => @spec.body([n.term(), n.term(), @spec.ctor("Leaf", [])]),
-      ),
+      forall1("GoodLeaf", binder("n", ty("Nat")), n => {
+        body([n.term(), n.term(), ctor("Leaf", [])])
+      }),
     ],
   )
 }
 
 ///|
-fn bst_relation_spec() -> @spec.RelationSpec {
-  @spec.inductive(
+fn bst_relation_spec() -> RelationSpec {
+  inductive(
     "bst",
     [
-      @spec.in_param("lo", @spec.ty("Nat")),
-      @spec.in_param("hi", @spec.ty("Nat")),
-      @spec.out_param("tree", @spec.ty("Tree")),
+      in_param("lo", ty("Nat")),
+      in_param("hi", ty("Nat")),
+      out_param("tree", ty("Tree")),
     ],
     [
-      @spec.constructor_forall0("BstLeaf", () => {
-        @spec.body([@spec.v("lo"), @spec.v("hi"), @spec.ctor("Leaf", [])])
-      }),
-      @spec.constructor_forall3(
+      forall0("BstLeaf", () => body([v("lo"), v("hi"), ctor("Leaf", [])])),
+      forall3(
         "BstNode",
-        @spec.binder("x", @spec.ty("Nat")),
-        @spec.binder("l", @spec.ty("Tree")),
-        @spec.binder("r", @spec.ty("Tree")),
+        binder("x", ty("Nat")),
+        binder("l", ty("Tree")),
+        binder("r", ty("Tree")),
         (x, l, r) => {
-          @spec.body(
-            [
-              @spec.v("lo"),
-              @spec.v("hi"),
-              @spec.ctor("Node", [x.term(), l.term(), r.term()]),
-            ],
+          body(
+            [v("lo"), v("hi"), ctor("Node", [x.term(), l.term(), r.term()])],
             hypotheses=[
-              @spec.pred("<", [@spec.v("lo"), x.term()]),
-              @spec.pred("<", [x.term(), @spec.v("hi")]),
-              @spec.rel("bst", [@spec.v("lo"), x.term(), l.term()]),
-              @spec.rel("bst", [x.term(), @spec.v("hi"), r.term()]),
+              pred("<", [v("lo"), x.term()]),
+              pred("<", [x.term(), v("hi")]),
+              rel("bst", [v("lo"), x.term(), l.term()]),
+              rel("bst", [x.term(), v("hi"), r.term()]),
             ],
           )
         },
@@ -241,7 +224,7 @@ test "compile pipeline derives nonempty tree generator from single constructor" 
 
 ///|
 test "compile pipeline derives complete generator with size split" {
-  let ast = try! compile_relation_to_bounded_generator(complete_relation_spec())
+  let ast = try! compile_relation_to_bounded_generator(complete_tree_spec())
   inspect(
     ast.to_string(),
     content=(
