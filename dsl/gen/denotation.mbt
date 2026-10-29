@@ -1,7 +1,7 @@
 ///|
 /// Denotational value domain for typed generator evaluation.
 pub(all) enum DenValue[T] {
-  DenInt(Int)
+  DenInt(Int32)
   DenBool(Bool)
   DenString(String)
   DenOut(T)
@@ -21,7 +21,7 @@ pub(all) struct DenotationEnv[T] {
   use_ctor : (String, Array[DenValue[T]]) -> DenValue[T]? raise GenRuntimeError
   split_ctor : (DenValue[T], String) -> Array[DenValue[T]]? raise GenRuntimeError
   call : (String, Array[DenValue[T]]) -> DenValue[T]? raise GenRuntimeError
-  arbitrary : (String, @spec.TypeRef?, Int, @splitmix.RandomState) -> DenValue[
+  arbitrary : (String, @spec.TypeRef?, Int32, @splitmix.RandomState) -> DenValue[
     T,
   ]? raise GenRuntimeError
   eq : (DenValue[T], DenValue[T]) -> Bool raise GenRuntimeError
@@ -190,7 +190,7 @@ pub fn[T] MoonBitGenerator::eval(
   self : MoonBitGenerator,
   env : DenotationEnv[T],
 ) -> Gen[T] {
-  { generator: self, env }
+  { generator: self, env, }
 }
 
 ///|
@@ -198,13 +198,13 @@ pub fn[T] MoonBitGenerator::eval(
 pub fn[T] compile_relation_to_gen(
   rel : @spec.RelationSpec,
   env : DenotationEnv[T],
-  options? : CompileOptions = default_compile_options(),
+  options~ : CompileOptions = default_compile_options(),
 ) -> Gen[T] raise {
   compile_relation_to_moonbit_generator(rel, options~).eval(env)
 }
 
 ///|
-fn[T] den_nat_to_int(value : DenValue[T]) -> Int? {
+fn[T] den_nat_to_int(value : DenValue[T]) -> Int32? {
   match value {
     DenInt(x) => Some(x)
     DenCtor("O", []) => Some(0)
@@ -217,7 +217,7 @@ fn[T] den_nat_to_int(value : DenValue[T]) -> Int? {
 fn[T] den_expect_int(
   value : DenValue[T],
   context : String,
-) -> Int raise GenRuntimeError {
+) -> Int32 raise GenRuntimeError {
   guard den_nat_to_int(value) is Some(x) else {
     fail_runtime("Expected Int/Nat in \{context}")
   }
@@ -248,14 +248,14 @@ fn[T] den_builtin_ctor(
 ///|
 fn[T] den_builtin_arbitrary(
   ty : @spec.TypeRef?,
-  size : Int,
+  size : Int32,
   rs : @splitmix.RandomState,
 ) -> DenValue[T]? {
   match ty {
     Some(@spec.Named("Nat"))
     | Some(@spec.Named("Int"))
     | Some(@spec.Named("Atom")) => {
-      let x : Int = @quickcheck.Arbitrary::arbitrary(size, rs)
+      let x : Int32 = @quickcheck.Arbitrary::arbitrary(size, rs)
       Some(DenInt(x))
     }
     Some(@spec.Named("Bool")) => {
@@ -380,7 +380,7 @@ fn[T] den_bind_pattern_args(
   env_values : @ihashmap.HashMap[String, DenValue[T]],
   patterns : Array[PatternAst],
   values : Array[DenValue[T]],
-  idx : Int,
+  idx : Int32,
 ) -> @ihashmap.HashMap[String, DenValue[T]]? raise GenRuntimeError {
   if idx >= patterns.length() {
     Some(env_values)
@@ -447,7 +447,7 @@ priv struct DenotationExec[T] {
 fn[T] DenotationExec::sample_value(
   self : DenotationExec[T],
   bind_name : String,
-  size : Int,
+  size : Int32,
 ) -> DenValue[T]? raise GenRuntimeError {
   let ty = self.generator.var_types.get(bind_name)
   match den_builtin_arbitrary(ty, size, self.rs) {
@@ -461,7 +461,7 @@ fn[T] DenotationExec::eval_expr(
   self : DenotationExec[T],
   env_values : @ihashmap.HashMap[String, DenValue[T]],
   expr : ExprAst,
-  size : Int,
+  size : Int32,
 ) -> DenValue[T] raise GenRuntimeError {
   match expr {
     Var(name) => {
@@ -503,7 +503,7 @@ fn[T] DenotationExec::eval_guard(
   self : DenotationExec[T],
   env_values : @ihashmap.HashMap[String, DenValue[T]],
   guard_ast : GuardAst,
-  size : Int,
+  size : Int32,
 ) -> Bool raise GenRuntimeError {
   match guard_ast {
     Eq(lhs, rhs) =>
@@ -522,7 +522,7 @@ fn[T] DenotationExec::eval_guard(
 ///|
 fn[T] DenotationExec::run_aux(
   self : DenotationExec[T],
-  size : Int,
+  size : Int32,
   inputs : Array[DenValue[T]],
 ) -> Array[DenValue[T]]? raise GenRuntimeError {
   guard inputs.length() == self.generator.input_names.length() else {
@@ -548,7 +548,7 @@ fn[T] DenotationExec::eval_backtrack(
   self : DenotationExec[T],
   cases : Array[WeightedCaseAst],
   env_values : @ihashmap.HashMap[String, DenValue[T]],
-  size : Int,
+  size : Int32,
 ) -> Array[DenValue[T]]? raise GenRuntimeError {
   let remaining = cases.copy()
   while !remaining.is_empty() {
@@ -569,7 +569,7 @@ fn[T] DenotationExec::eval_bind_source(
   bind_name : String,
   source : BindSourceAst,
   env_values : @ihashmap.HashMap[String, DenValue[T]],
-  size : Int,
+  size : Int32,
 ) -> DenValue[T]? raise GenRuntimeError {
   match source {
     Arbitrary => self.sample_value(bind_name, size)
@@ -618,7 +618,7 @@ fn[T] DenotationExec::eval_node(
   self : DenotationExec[T],
   node : GenNode,
   env_values : @ihashmap.HashMap[String, DenValue[T]],
-  size : Int,
+  size : Int32,
 ) -> Array[DenValue[T]]? raise GenRuntimeError {
   match node {
     RetNone => None
@@ -667,7 +667,7 @@ fn[T] den_output(
 /// Run denotational generator and return raw denotational outputs.
 pub fn[T] Gen::run_values(
   self : Gen[T],
-  size : Int,
+  size : Int32,
   inputs : Array[DenValue[T]],
   rs : @splitmix.RandomState,
 ) -> Array[DenValue[T]]? raise GenRuntimeError {
@@ -683,7 +683,7 @@ pub fn[T] Gen::run_values(
 /// Run denotational generator and decode every output through `DenotationEnv`.
 pub fn[T] Gen::run(
   self : Gen[T],
-  size : Int,
+  size : Int32,
   inputs : Array[DenValue[T]],
   rs : @splitmix.RandomState,
 ) -> Array[T]? raise GenRuntimeError {
@@ -700,7 +700,7 @@ pub fn[T] Gen::run(
 /// Single-output runner for denotational generator.
 pub fn[T] Gen::run_one(
   self : Gen[T],
-  size : Int,
+  size : Int32,
   inputs : Array[DenValue[T]],
   rs : @splitmix.RandomState,
 ) -> T? raise GenRuntimeError {
@@ -717,7 +717,7 @@ pub fn[T] Gen::run_one(
 /// Arity-1 helper with `RuntimeEncode` input conversion.
 pub fn[T, In1 : RuntimeEncode] Gen::run1(
   self : Gen[T],
-  size : Int,
+  size : Int32,
   input1 : In1,
   rs : @splitmix.RandomState,
 ) -> T? raise GenRuntimeError {
@@ -728,7 +728,7 @@ pub fn[T, In1 : RuntimeEncode] Gen::run1(
 /// Arity-2 helper with `RuntimeEncode` input conversion.
 pub fn[T, In1 : RuntimeEncode, In2 : RuntimeEncode] Gen::run2(
   self : Gen[T],
-  size : Int,
+  size : Int32,
   input1 : In1,
   input2 : In2,
   rs : @splitmix.RandomState,

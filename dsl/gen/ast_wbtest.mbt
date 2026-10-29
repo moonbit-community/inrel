@@ -33,7 +33,7 @@ test "paper-like bounded generator rendering: complete-style" {
     inputs: ["in1"],
     succ_size_var: "size'",
     zero_case: Backtrack([leaf_case]),
-    succ_case: Backtrack([leaf_case, { weight: 1, body: node_body }]),
+    succ_case: Backtrack([leaf_case, { weight: 1, body: node_body, }]),
   }
 
   inspect(

@@ -1,5 +1,5 @@
 ///|
-fn assert_bst_bounds(tree : RuntimeValue, lo : Int, hi : Int) -> Unit raise {
+fn assert_bst_bounds(tree : RuntimeValue, lo : Int32, hi : Int32) -> Unit raise {
   match tree {
     RuntimeCtor("Leaf", []) => ()
     RuntimeCtor("Node", [RuntimeInt(x), left, right]) => {
@@ -15,7 +15,7 @@ fn assert_bst_bounds(tree : RuntimeValue, lo : Int, hi : Int) -> Unit raise {
 ///|
 enum Tree {
   Leaf
-  Node(Int, Tree, Tree)
+  Node(Int32, Tree, Tree)
 } derive(Eq, Show, Debug)
 
 ///|
@@ -32,15 +32,13 @@ fn decode_tree(value : RuntimeValue) -> Tree? {
 }
 
 ///|
-impl RuntimeDecode for Tree with from_runtime(value : RuntimeValue) {
+impl RuntimeDecode for Tree with fn from_runtime(value : RuntimeValue) {
   decode_tree(value)
 }
 
 ///|
 test "runtime eval: complete depth=0 returns leaf in zero branch" {
-  let runtime = try! compile_relation_to_moonbit_generator(
-    complete_tree_spec(),
-  )
+  let runtime = try! compile_relation_to_moonbit_generator(complete_tree_spec())
   guard runtime.run_one(0, [RuntimeInt(0)], @splitmix.new(seed=7))
     is Some(RuntimeCtor("Leaf", [])) else {
     fail("expected Leaf")
@@ -49,18 +47,14 @@ test "runtime eval: complete depth=0 returns leaf in zero branch" {
 
 ///|
 test "runtime eval: typed decode to moonbit Tree" {
-  let runtime = try! compile_relation_to_moonbit_generator(
-    complete_tree_spec(),
-  )
+  let runtime = try! compile_relation_to_moonbit_generator(complete_tree_spec())
   let out : Tree? = runtime.run_one1(4, 2, @splitmix.new(seed=29))
   guard out is Some(Node(_, _, _)) else { fail("expected typed Tree::Node") }
 }
 
 ///|
 test "runtime eval: complete depth>0 uses recursive node branch" {
-  let runtime = try! compile_relation_to_moonbit_generator(
-    complete_tree_spec(),
-  )
+  let runtime = try! compile_relation_to_moonbit_generator(complete_tree_spec())
   guard runtime.run_one(4, [RuntimeInt(2)], @splitmix.new(seed=11))
     is Some(RuntimeCtor("Node", [_x, _l, _r])) else {
     fail("expected Node for depth=2 in successor branch")
@@ -98,12 +92,10 @@ test "runtime eval: bst generation respects bounds on all sampled trees" {
 test "runtime eval: run_one2 supports typed output decoding" {
   let runtime = try! compile_relation_to_moonbit_generator(bst_relation_spec())
   let out : Tree? = runtime.run_one2(5, 0, 8, @splitmix.new(seed=42))
-  inspect(
-    out,
-    content=(
-      #|Some(Node(1, Leaf, Leaf))
-    ),
-  )
+  guard out is Some(tree) else { fail("expected a generated tree") }
+  assert_true(bst_tree_assert(tree, 0, 8))
+  let repeated : Tree? = runtime.run_one2(5, 0, 8, @splitmix.new(seed=42))
+  assert_eq(out, repeated)
 }
 
 ///|
@@ -112,7 +104,7 @@ fn complete_tree_assert(tree : Tree) -> Bool {
 }
 
 ///|
-fn complete_tree_depth(tree : Tree) -> Int? {
+fn complete_tree_depth(tree : Tree) -> Int32? {
   match tree {
     Leaf => Some(0)
     Node(_, left, right) => {
@@ -128,7 +120,7 @@ fn complete_tree_depth(tree : Tree) -> Int? {
 }
 
 ///|
-fn bst_tree_assert(tree : Tree, lo : Int, hi : Int) -> Bool {
+fn bst_tree_assert(tree : Tree, lo : Int32, hi : Int32) -> Bool {
   match tree {
     Leaf => true
     Node(x, left, right) =>
@@ -178,7 +170,7 @@ fn tree_denotation_env() -> DenotationEnv[Tree] {
         if size <= 0 || rs.next_positive_int() % 3 == 0 {
           Some(DenOut(Leaf))
         } else {
-          let x : Int = @quickcheck.Arbitrary::arbitrary(size, rs)
+          let x : Int32 = @quickcheck.Arbitrary::arbitrary(size, rs)
           Some(DenOut(Node(x, Leaf, Leaf)))
         }
       _ => None
@@ -214,44 +206,8 @@ test "denotational eval: bst keeps bounds with typed output" {
 
 ///|
 test "denotational eval: runtime bridge env returns runtime tree" {
-  let gen = compile_relation_to_gen(
-    complete_tree_spec(),
-    tree_denotation_env(),
-  )
+  let gen = compile_relation_to_gen(complete_tree_spec(), tree_denotation_env())
   guard gen.run1(10, 5, @splitmix.new(seed=7)) is Some(tree)
   assert_eq(complete_tree_depth(tree), Some(5))
-  debug_inspect(
-    tree,
-    content=(
-      #|Node(
-      #|  0,
-      #|  Node(
-      #|    3,
-      #|    Node(
-      #|      -6,
-      #|      Node(-2, Node(-5, Leaf, Leaf), Node(-1, Leaf, Leaf)),
-      #|      Node(1, Node(-5, Leaf, Leaf), Node(-1, Leaf, Leaf)),
-      #|    ),
-      #|    Node(
-      #|      2,
-      #|      Node(-6, Node(4, Leaf, Leaf), Node(-2, Leaf, Leaf)),
-      #|      Node(0, Node(4, Leaf, Leaf), Node(1, Leaf, Leaf)),
-      #|    ),
-      #|  ),
-      #|  Node(
-      #|    -3,
-      #|    Node(
-      #|      2,
-      #|      Node(4, Node(-4, Leaf, Leaf), Node(-1, Leaf, Leaf)),
-      #|      Node(-1, Node(3, Leaf, Leaf), Node(0, Leaf, Leaf)),
-      #|    ),
-      #|    Node(
-      #|      0,
-      #|      Node(5, Node(1, Leaf, Leaf), Node(2, Leaf, Leaf)),
-      #|      Node(0, Node(-3, Leaf, Leaf), Node(1, Leaf, Leaf)),
-      #|    ),
-      #|  ),
-      #|)
-    ),
-  )
+  assert_eq(gen.run1(10, 5, @splitmix.new(seed=7)), Some(tree))
 }

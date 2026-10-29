@@ -1,7 +1,7 @@
 import {
-  "CAIMEOX/inrel/dsl/spec" @spec,
-  "CAIMEOX/inrel/dsl/unify" @unify,
+  "CAIMEOX/inrel/dsl/spec",
+  "CAIMEOX/inrel/dsl/unify",
   "moonbitlang/core/immut/hashmap" @ihashmap,
-  "moonbitlang/core/quickcheck" @quickcheck,
-  "moonbitlang/core/quickcheck/splitmix" @splitmix,
+  "moonbitlang/core/quickcheck",
+  "moonbitlang/core/quickcheck/splitmix",
 }

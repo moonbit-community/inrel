@@ -1,7 +1,7 @@
 ///|
 /// Runtime value domain for direct execution of generated generator AST.
 pub(all) enum RuntimeValue {
-  RuntimeInt(Int)
+  RuntimeInt(Int32)
   RuntimeBool(Bool)
   RuntimeString(String)
   RuntimeCtor(String, Array[RuntimeValue])
@@ -29,49 +29,51 @@ fn RuntimeValue::render(self : RuntimeValue) -> String {
 }
 
 ///|
-pub impl Show for RuntimeValue with output(self, logger) {
+pub impl Show for RuntimeValue with fn output(self, logger) {
   logger.write_string(self.render())
 }
 
 ///|
 /// Conversion from MoonBit values into runtime AST values.
 pub(open) trait RuntimeEncode {
-  to_runtime(Self) -> RuntimeValue
+  fn to_runtime(Self) -> RuntimeValue
 }
 
 ///|
 /// Conversion from runtime AST values back to MoonBit values.
 pub(open) trait RuntimeDecode {
-  from_runtime(RuntimeValue) -> Self?
+  fn from_runtime(RuntimeValue) -> Self?
 }
 
 ///|
-pub impl RuntimeEncode for RuntimeValue with to_runtime(self : RuntimeValue) {
+pub impl RuntimeEncode for RuntimeValue with fn to_runtime(self : RuntimeValue) {
   self
 }
 
 ///|
-pub impl RuntimeDecode for RuntimeValue with from_runtime(value : RuntimeValue) {
+pub impl RuntimeDecode for RuntimeValue with fn from_runtime(
+  value : RuntimeValue,
+) {
   Some(value)
 }
 
 ///|
-pub impl RuntimeEncode for Int with to_runtime(self : Int) {
+pub impl RuntimeEncode for Int32 with fn to_runtime(self : Int32) {
   RuntimeInt(self)
 }
 
 ///|
-pub impl RuntimeDecode for Int with from_runtime(value : RuntimeValue) {
+pub impl RuntimeDecode for Int32 with fn from_runtime(value : RuntimeValue) {
   nat_to_int(value)
 }
 
 ///|
-pub impl RuntimeEncode for Bool with to_runtime(self : Bool) {
+pub impl RuntimeEncode for Bool with fn to_runtime(self : Bool) {
   RuntimeBool(self)
 }
 
 ///|
-pub impl RuntimeDecode for Bool with from_runtime(value : RuntimeValue) {
+pub impl RuntimeDecode for Bool with fn from_runtime(value : RuntimeValue) {
   match value {
     RuntimeBool(x) => Some(x)
     _ => None
@@ -79,12 +81,12 @@ pub impl RuntimeDecode for Bool with from_runtime(value : RuntimeValue) {
 }
 
 ///|
-pub impl RuntimeEncode for String with to_runtime(self : String) {
+pub impl RuntimeEncode for String with fn to_runtime(self : String) {
   RuntimeString(self)
 }
 
 ///|
-pub impl RuntimeDecode for String with from_runtime(value : RuntimeValue) {
+pub impl RuntimeDecode for String with fn from_runtime(value : RuntimeValue) {
   match value {
     RuntimeString(x) => Some(x)
     _ => None
@@ -99,7 +101,7 @@ pub impl RuntimeDecode for String with from_runtime(value : RuntimeValue) {
 pub(all) struct MoonBitGenerator {
   aux_name : String
   input_names : Array[String]
-  output_arity : Int
+  output_arity : Int32
   var_types : @ihashmap.HashMap[String, @spec.TypeRef]
   zero_case : GenNode
   succ_case : GenNode
@@ -144,7 +146,7 @@ fn relation_var_types(
 /// `RelationSpec -> BoundedGeneratorAst -> executable evaluator`.
 pub fn compile_relation_to_moonbit_generator(
   rel : @spec.RelationSpec,
-  options? : CompileOptions = default_compile_options(),
+  options~ : CompileOptions = default_compile_options(),
 ) -> MoonBitGenerator raise {
   let ast = compile_relation_to_bounded_generator(rel, options~)
   {
@@ -160,14 +162,14 @@ pub fn compile_relation_to_moonbit_generator(
 ///|
 fn default_sample_for_type(
   ty : @spec.TypeRef?,
-  size : Int,
+  size : Int32,
   rs : @splitmix.RandomState,
 ) -> RuntimeValue {
   match ty {
     Some(@spec.Named("Nat"))
     | Some(@spec.Named("Int"))
     | Some(@spec.Named("Atom")) => {
-      let x : Int = @quickcheck.Arbitrary::arbitrary(size, rs)
+      let x : Int32 = @quickcheck.Arbitrary::arbitrary(size, rs)
       RuntimeInt(x)
     }
     Some(@spec.Named("Bool")) => {
@@ -180,14 +182,14 @@ fn default_sample_for_type(
     }
     Some(@spec.Named(name)) | Some(@spec.App(name, _)) => RuntimeCtor(name, [])
     None => {
-      let x : Int = @quickcheck.Arbitrary::arbitrary(size, rs)
+      let x : Int32 = @quickcheck.Arbitrary::arbitrary(size, rs)
       RuntimeInt(x)
     }
   }
 }
 
 ///|
-fn nat_to_int(value : RuntimeValue) -> Int? {
+fn nat_to_int(value : RuntimeValue) -> Int32? {
   match value {
     RuntimeInt(x) => Some(x)
     RuntimeCtor("O", []) => Some(0)
@@ -204,7 +206,7 @@ fn nat_to_int(value : RuntimeValue) -> Int? {
 fn expect_int(
   value : RuntimeValue,
   context : String,
-) -> Int raise GenRuntimeError {
+) -> Int32 raise GenRuntimeError {
   guard nat_to_int(value) is Some(x) else {
     fail_runtime("Expected Int/Nat in \{context}, got \{value}")
   }
@@ -351,7 +353,7 @@ fn bind_pattern_args(
   env : @ihashmap.HashMap[String, RuntimeValue],
   patterns : Array[PatternAst],
   values : Array[RuntimeValue],
-  idx : Int,
+  idx : Int32,
 ) -> @ihashmap.HashMap[String, RuntimeValue]? {
   if idx >= patterns.length() {
     Some(env)
@@ -396,7 +398,7 @@ fn bind_pattern(
 fn pick_weighted_index(
   cases : Array[WeightedCaseAst],
   rs : @splitmix.RandomState,
-) -> Int {
+) -> Int32 {
   guard !cases.is_empty() else { 0 }
   let total = cases.fold(init=0, (acc, c) => {
     acc + (if c.weight > 0 { c.weight } else { 1 })
@@ -422,7 +424,7 @@ priv struct RuntimeExecContext {
 fn RuntimeExecContext::sample_value(
   self : RuntimeExecContext,
   bind_name : String,
-  size : Int,
+  size : Int32,
 ) -> RuntimeValue {
   default_sample_for_type(
     self.generator.var_types.get(bind_name),
@@ -436,7 +438,7 @@ fn RuntimeExecContext::eval_expr(
   self : RuntimeExecContext,
   env : @ihashmap.HashMap[String, RuntimeValue],
   expr : ExprAst,
-  size : Int,
+  size : Int32,
 ) -> RuntimeValue raise GenRuntimeError {
   match expr {
     Var(name) =>
@@ -466,7 +468,7 @@ fn RuntimeExecContext::eval_decidable(
   self : RuntimeExecContext,
   env : @ihashmap.HashMap[String, RuntimeValue],
   expr : ExprAst,
-  size : Int,
+  size : Int32,
 ) -> Bool raise GenRuntimeError {
   expect_bool(self.eval_expr(env, expr, size), "decidable guard")
 }
@@ -476,7 +478,7 @@ fn RuntimeExecContext::eval_guard(
   self : RuntimeExecContext,
   env : @ihashmap.HashMap[String, RuntimeValue],
   guard_ast : GuardAst,
-  size : Int,
+  size : Int32,
 ) -> Bool raise GenRuntimeError {
   match guard_ast {
     Eq(lhs, rhs) =>
@@ -488,7 +490,7 @@ fn RuntimeExecContext::eval_guard(
 ///|
 fn RuntimeExecContext::run_aux(
   self : RuntimeExecContext,
-  size : Int,
+  size : Int32,
   inputs : Array[RuntimeValue],
 ) -> Array[RuntimeValue]? raise GenRuntimeError {
   guard inputs.length() == self.generator.input_names.length() else {
@@ -514,7 +516,7 @@ fn RuntimeExecContext::eval_backtrack(
   self : RuntimeExecContext,
   cases : Array[WeightedCaseAst],
   env : @ihashmap.HashMap[String, RuntimeValue],
-  size : Int,
+  size : Int32,
 ) -> Array[RuntimeValue]? raise GenRuntimeError {
   let remaining = cases.copy()
   while !remaining.is_empty() {
@@ -535,7 +537,7 @@ fn RuntimeExecContext::eval_bind_source(
   bind_name : String,
   source : BindSourceAst,
   env : @ihashmap.HashMap[String, RuntimeValue],
-  size : Int,
+  size : Int32,
 ) -> RuntimeValue? raise GenRuntimeError {
   match source {
     Arbitrary => Some(self.sample_value(bind_name, size))
@@ -579,7 +581,7 @@ fn RuntimeExecContext::eval_node(
   self : RuntimeExecContext,
   node : GenNode,
   env : @ihashmap.HashMap[String, RuntimeValue],
-  size : Int,
+  size : Int32,
 ) -> Array[RuntimeValue]? raise GenRuntimeError {
   match node {
     RetNone => None
@@ -616,11 +618,11 @@ fn RuntimeExecContext::eval_node(
 /// Execute with an explicit random state.
 pub fn MoonBitGenerator::run(
   self : MoonBitGenerator,
-  size : Int,
+  size : Int32,
   inputs : Array[RuntimeValue],
   rs : @splitmix.RandomState,
 ) -> Array[RuntimeValue]? raise GenRuntimeError {
-  let ctx : RuntimeExecContext = { generator: self, rs }
+  let ctx : RuntimeExecContext = { generator: self, rs, }
   ctx.run_aux(size, inputs)
 }
 
@@ -628,9 +630,9 @@ pub fn MoonBitGenerator::run(
 /// Execute once with a seed-created random state.
 pub fn MoonBitGenerator::run_seeded(
   self : MoonBitGenerator,
-  size : Int,
+  size : Int32,
   inputs : Array[RuntimeValue],
-  seed? : UInt64 = 37,
+  seed~ : UInt64 = 37,
 ) -> Array[RuntimeValue]? raise GenRuntimeError {
   self.run(size, inputs, @splitmix.new(seed~))
 }
@@ -639,7 +641,7 @@ pub fn MoonBitGenerator::run_seeded(
 /// Execute and decode all outputs to a MoonBit type.
 pub fn[Out : RuntimeDecode] MoonBitGenerator::run_as(
   self : MoonBitGenerator,
-  size : Int,
+  size : Int32,
   inputs : Array[RuntimeValue],
   rs : @splitmix.RandomState,
 ) -> Array[Out]? raise GenRuntimeError {
@@ -656,7 +658,7 @@ pub fn[Out : RuntimeDecode] MoonBitGenerator::run_as(
 /// Convenience for single-output relations.
 pub fn MoonBitGenerator::run_one(
   self : MoonBitGenerator,
-  size : Int,
+  size : Int32,
   inputs : Array[RuntimeValue],
   rs : @splitmix.RandomState,
 ) -> RuntimeValue? raise GenRuntimeError {
@@ -676,7 +678,7 @@ pub fn MoonBitGenerator::run_one(
 /// Single-output typed execution using a decoder trait.
 pub fn[Out : RuntimeDecode] MoonBitGenerator::run_one_as(
   self : MoonBitGenerator,
-  size : Int,
+  size : Int32,
   inputs : Array[RuntimeValue],
   rs : @splitmix.RandomState,
 ) -> Out? raise GenRuntimeError {
@@ -688,7 +690,7 @@ pub fn[Out : RuntimeDecode] MoonBitGenerator::run_one_as(
 /// Single-input + single-output convenience API.
 pub fn[In1 : RuntimeEncode, Out : RuntimeDecode] MoonBitGenerator::run_one1(
   self : MoonBitGenerator,
-  size : Int,
+  size : Int32,
   input1 : In1,
   rs : @splitmix.RandomState,
 ) -> Out? raise GenRuntimeError {
@@ -704,7 +706,7 @@ pub fn[In1 : RuntimeEncode, Out : RuntimeDecode] MoonBitGenerator::run_one1(
 /// Two-input + single-output convenience API.
 pub fn[In1 : RuntimeEncode, In2 : RuntimeEncode, Out : RuntimeDecode] MoonBitGenerator::run_one2(
   self : MoonBitGenerator,
-  size : Int,
+  size : Int32,
   input1 : In1,
   input2 : In2,
   rs : @splitmix.RandomState,

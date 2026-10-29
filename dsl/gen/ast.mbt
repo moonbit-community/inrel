@@ -51,7 +51,7 @@ pub(all) enum BindSourceAst {
 /// Correspondence (paper Section 4.3):
 /// `backtrack [ ... (wC, gC) ... ]`
 pub(all) struct WeightedCaseAst {
-  weight : Int
+  weight : Int32
   body : GenNode
 } derive(Eq, ToJson, Debug)
 
@@ -81,7 +81,7 @@ pub(all) struct BoundedGeneratorAst {
 } derive(Eq, ToJson, Debug)
 
 ///|
-fn indent(level : Int) -> String {
+fn indent(level : Int32) -> String {
   let sb = StringBuilder::new()
   for _ in 0..<level {
     sb.write_string("  ")
@@ -199,7 +199,7 @@ fn render_some_payload(values : Array[ExprAst]) -> String {
 }
 
 ///|
-fn GenNode::render_lines(self : GenNode, level : Int) -> Array[String] {
+fn GenNode::render_lines(self : GenNode, level : Int32) -> Array[String] {
   let i = indent(level)
   match self {
     RetNone => ["\{i}ret None"]
@@ -274,31 +274,31 @@ pub fn BoundedGeneratorAst::to_paper_string(
 }
 
 ///|
-pub impl Show for PatternAst with output(self, logger) {
+pub impl Show for PatternAst with fn output(self, logger) {
   logger.write_string(self.render())
 }
 
 ///|
-pub impl Show for ExprAst with output(self, logger) {
+pub impl Show for ExprAst with fn output(self, logger) {
   logger.write_string(self.render())
 }
 
 ///|
-pub impl Show for GuardAst with output(self, logger) {
+pub impl Show for GuardAst with fn output(self, logger) {
   logger.write_string(self.render())
 }
 
 ///|
-pub impl Show for BindSourceAst with output(self, logger) {
+pub impl Show for BindSourceAst with fn output(self, logger) {
   logger.write_string(self.render())
 }
 
 ///|
-pub impl Show for GenNode with output(self, logger) {
+pub impl Show for GenNode with fn output(self, logger) {
   logger.write_string(self.to_paper_string())
 }
 
 ///|
-pub impl Show for BoundedGeneratorAst with output(self, logger) {
+pub impl Show for BoundedGeneratorAst with fn output(self, logger) {
   logger.write_string(self.to_paper_string())
 }

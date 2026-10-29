@@ -72,7 +72,7 @@ pub struct ParamSpec {
 
 ///|
 pub fn make_param(name : String, ty : TypeRef, mode : ParamMode) -> ParamSpec {
-  { name, ty, mode }
+  { name, ty, mode, }
 }
 
 ///|
@@ -87,7 +87,7 @@ pub struct BinderSpec {
 
 ///|
 pub fn make_binder(name : String, ty : TypeRef) -> BinderSpec {
-  { name, ty }
+  { name, ty, }
 }
 
 ///|
@@ -129,7 +129,7 @@ pub struct ConstructorSpec {
   binders : Array[BinderSpec]
   hypotheses : Array[HypothesisSpec]
   conclusion : Array[Term]
-  weight : Int
+  weight : Int32
 } derive(Eq, Show, ToJson)
 
 ///|
@@ -151,9 +151,9 @@ pub fn make_constructor(
   binders : Array[BinderSpec],
   hypotheses : Array[HypothesisSpec],
   conclusion : Array[Term],
-  weight? : Int = 1,
+  weight~ : Int32 = 1,
 ) -> ConstructorSpec {
-  { name, binders, hypotheses, conclusion, weight }
+  { name, binders, hypotheses, conclusion, weight, }
 }
 
 ///|
@@ -163,19 +163,19 @@ pub fn make_relation(
   params : Array[ParamSpec],
   constructors : Array[ConstructorSpec],
 ) -> RelationSpec {
-  { name, params, constructors }
+  { name, params, constructors, }
 }
 
 ///|
 /// Number of parameters (`p` in Section 4.1).
-pub fn RelationSpec::arity(self : RelationSpec) -> Int {
+pub fn RelationSpec::arity(self : RelationSpec) -> Int32 {
   self.params.length()
 }
 
 ///|
 /// Positions of input parameters.
-pub fn RelationSpec::input_positions(self : RelationSpec) -> Array[Int] {
-  let out : Array[Int] = []
+pub fn RelationSpec::input_positions(self : RelationSpec) -> Array[Int32] {
+  let out : Array[Int32] = []
   for i, p in self.params {
     if p.mode is In {
       out.push(i)
@@ -186,8 +186,8 @@ pub fn RelationSpec::input_positions(self : RelationSpec) -> Array[Int] {
 
 ///|
 /// Positions of output parameters.
-pub fn RelationSpec::output_positions(self : RelationSpec) -> Array[Int] {
-  let out : Array[Int] = []
+pub fn RelationSpec::output_positions(self : RelationSpec) -> Array[Int32] {
+  let out : Array[Int32] = []
   for i, p in self.params {
     if p.mode is Out {
       out.push(i)
@@ -292,6 +292,6 @@ pub fn RelationSpec::to_inductive_string(self : RelationSpec) -> String {
 }
 
 ///|
-pub impl Show for RelationSpec with output(self, logger) {
+pub impl Show for RelationSpec with fn output(self, logger) {
   logger.write_string(self.to_inductive_string())
 }
