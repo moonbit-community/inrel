@@ -6,17 +6,19 @@ pub fn binder(String, TypeRef) -> BinderSpec
 
 pub fn body(Array[Term], hypotheses? : Array[HypothesisSpec]) -> ConstructorBody
 
-pub fn constructor_forall0(String, () -> ConstructorBody, weight? : Int) -> ConstructorSpec
-
-pub fn constructor_forall1(String, BinderSpec, (VarRef) -> ConstructorBody, weight? : Int) -> ConstructorSpec
-
-pub fn constructor_forall2(String, BinderSpec, BinderSpec, (VarRef, VarRef) -> ConstructorBody, weight? : Int) -> ConstructorSpec
-
-pub fn constructor_forall3(String, BinderSpec, BinderSpec, BinderSpec, (VarRef, VarRef, VarRef) -> ConstructorBody, weight? : Int) -> ConstructorSpec
-
-pub fn constructor_scoped(String, Array[BinderSpec], (Scope) -> ConstructorBody, weight? : Int) -> ConstructorSpec
+pub fn constructor_scoped(String, Array[BinderSpec], (Scope) -> ConstructorBody, weight? : Int32) -> ConstructorSpec
 
 pub fn ctor(String, Array[Term]) -> Term
+
+pub fn forall0(String, () -> ConstructorBody, weight? : Int32) -> ConstructorSpec
+
+pub fn forall1(String, BinderSpec, (VarRef) -> ConstructorBody, weight? : Int32) -> ConstructorSpec
+
+pub fn forall2(String, BinderSpec, BinderSpec, (VarRef, VarRef) -> ConstructorBody, weight? : Int32) -> ConstructorSpec
+
+pub fn forall3(String, BinderSpec, BinderSpec, BinderSpec, (VarRef, VarRef, VarRef) -> ConstructorBody, weight? : Int32) -> ConstructorSpec
+
+pub fn forall4(String, BinderSpec, BinderSpec, BinderSpec, BinderSpec, (VarRef, VarRef, VarRef, VarRef) -> ConstructorBody, weight? : Int32) -> ConstructorSpec
 
 pub fn hypothesis_predicate(String, Array[Term]) -> HypothesisSpec
 
@@ -28,7 +30,7 @@ pub fn inductive(String, Array[ParamSpec], Array[ConstructorSpec]) -> RelationSp
 
 pub fn make_binder(String, TypeRef) -> BinderSpec
 
-pub fn make_constructor(String, Array[BinderSpec], Array[HypothesisSpec], Array[Term], weight? : Int) -> ConstructorSpec
+pub fn make_constructor(String, Array[BinderSpec], Array[HypothesisSpec], Array[Term], weight? : Int32) -> ConstructorSpec
 
 pub fn make_param(String, TypeRef, ParamMode) -> ParamSpec
 
@@ -60,106 +62,73 @@ pub fn var_ref(String) -> VarRef
 pub struct BinderSpec {
   name : String
   ty : TypeRef
-}
-pub impl Eq for BinderSpec
-pub impl Show for BinderSpec
-pub impl ToJson for BinderSpec
+} derive(Eq, Show, ToJson)
 
 pub struct ConstructorBody {
   hypotheses : Array[HypothesisSpec]
   conclusion : Array[Term]
-}
-pub impl Eq for ConstructorBody
-pub impl Show for ConstructorBody
-pub impl ToJson for ConstructorBody
+} derive(Eq, Show, ToJson)
 
 pub struct ConstructorSpec {
   name : String
   binders : Array[BinderSpec]
   hypotheses : Array[HypothesisSpec]
   conclusion : Array[Term]
-  weight : Int
-}
-pub impl Eq for ConstructorSpec
-pub impl Show for ConstructorSpec
-pub impl ToJson for ConstructorSpec
+  weight : Int32
+} derive(Eq, Show, ToJson)
 
 pub enum HypothesisSpec {
   RelCall(String, Array[Term])
   Predicate(String, Array[Term])
-}
-pub impl Eq for HypothesisSpec
-pub impl Show for HypothesisSpec
-pub impl ToJson for HypothesisSpec
+} derive(Eq, Show, ToJson)
 
 pub enum ParamMode {
   In
   Out
-}
-pub impl Eq for ParamMode
-pub impl Show for ParamMode
-pub impl ToJson for ParamMode
+} derive(Eq, Show, ToJson)
 
 pub struct ParamSpec {
   name : String
   ty : TypeRef
   mode : ParamMode
-}
-pub impl Eq for ParamSpec
-pub impl Show for ParamSpec
-pub impl ToJson for ParamSpec
+} derive(Eq, Show, ToJson)
 
 pub struct RelationSpec {
   name : String
   params : Array[ParamSpec]
   constructors : Array[ConstructorSpec]
-}
-pub fn RelationSpec::arity(Self) -> Int
-pub fn RelationSpec::input_positions(Self) -> Array[Int]
-pub fn RelationSpec::output_positions(Self) -> Array[Int]
+} derive(Eq, ToJson)
+pub fn RelationSpec::arity(Self) -> Int32
+pub fn RelationSpec::input_positions(Self) -> Array[Int32]
+pub fn RelationSpec::output_positions(Self) -> Array[Int32]
 pub fn RelationSpec::to_inductive_string(Self) -> String
-pub impl Eq for RelationSpec
 pub impl Show for RelationSpec
-pub impl ToJson for RelationSpec
 
 pub struct Scope {
   vars : Array[VarRef]
-}
-pub fn Scope::at(Self, Int) -> VarRef
+} derive(Eq, Show, ToJson)
+pub fn Scope::at(Self, Int32) -> VarRef
 pub fn Scope::find(Self, String) -> VarRef?
 pub fn Scope::term(Self, String) -> Term?
 pub fn Scope::term_or_abort(Self, String) -> Term
 pub fn Scope::v(Self, String) -> VarRef
-pub impl Eq for Scope
-pub impl Show for Scope
-pub impl ToJson for Scope
 
 pub enum Term {
   Var(String)
   Ctor(String, Array[Term])
-}
-pub impl Eq for Term
-pub impl Show for Term
-pub impl ToJson for Term
+} derive(Eq, Show, ToJson)
 
 pub enum TypeRef {
   Named(String)
   App(String, Array[TypeRef])
-}
-pub impl Eq for TypeRef
-pub impl Show for TypeRef
-pub impl ToJson for TypeRef
+} derive(Eq, Show, ToJson)
 
 pub struct VarRef {
   name : String
-}
+} derive(Eq, Show, ToJson)
 pub fn VarRef::name(Self) -> String
 pub fn VarRef::term(Self) -> Term
-pub impl Eq for VarRef
-pub impl Show for VarRef
-pub impl ToJson for VarRef
 
 // Type aliases
 
 // Traits
-

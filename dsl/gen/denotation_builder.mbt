@@ -21,7 +21,7 @@ pub(all) struct DenCallCase[T] {
 pub(all) struct DenotationEnvBuilder[T] {
   ctor_cases : Array[DenCtorCase[T]]
   call_cases : Array[DenCallCase[T]]
-  arbitrary_case : (String, @spec.TypeRef?, Int, @splitmix.RandomState) -> DenValue[
+  arbitrary_case : (String, @spec.TypeRef?, Int32, @splitmix.RandomState) -> DenValue[
     T,
   ]? raise GenRuntimeError
   eq_out : (T, T) -> Bool
@@ -32,7 +32,7 @@ pub(all) struct DenotationEnvBuilder[T] {
 fn[T] den_default_arbitrary(
   _bind_name : String,
   _ty : @spec.TypeRef?,
-  _size : Int,
+  _size : Int32,
   _rs : @splitmix.RandomState,
 ) -> DenValue[T]? {
   None
@@ -79,7 +79,7 @@ pub fn[T] DenotationEnvBuilder::with_ctor(
   split : (T) -> Array[DenValue[T]]?,
 ) -> DenotationEnvBuilder[T] {
   let next_ctor_cases = self.ctor_cases.copy()
-  next_ctor_cases.push({ name, build_out, split })
+  next_ctor_cases.push({ name, build_out, split, })
   {
     ctor_cases: next_ctor_cases,
     call_cases: self.call_cases,
@@ -96,7 +96,7 @@ pub fn[T] DenotationEnvBuilder::with_call(
   run : (Array[DenValue[T]]) -> DenValue[T]? raise GenRuntimeError,
 ) -> DenotationEnvBuilder[T] {
   let next_call_cases = self.call_cases.copy()
-  next_call_cases.push({ name, run })
+  next_call_cases.push({ name, run, })
   {
     ctor_cases: self.ctor_cases,
     call_cases: next_call_cases,
@@ -109,7 +109,7 @@ pub fn[T] DenotationEnvBuilder::with_call(
 ///|
 pub fn[T] DenotationEnvBuilder::with_arbitrary(
   self : DenotationEnvBuilder[T],
-  arbitrary_case : (String, @spec.TypeRef?, Int, @splitmix.RandomState) -> DenValue[
+  arbitrary_case : (String, @spec.TypeRef?, Int32, @splitmix.RandomState) -> DenValue[
     T,
   ]? raise GenRuntimeError,
 ) -> DenotationEnvBuilder[T] {

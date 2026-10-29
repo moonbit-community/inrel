@@ -2,7 +2,7 @@
 enum Ty {
   NatTy
   Arrow(Ty, Ty)
-} derive(Eq)
+} derive(Eq, Debug)
 
 ///|
 enum Ctx {
@@ -12,8 +12,8 @@ enum Ctx {
 
 ///|
 enum Tm {
-  Var(Int)
-  Lit(Int)
+  Var(Int32)
+  Lit(Int32)
   Lam(Ty, Tm)
   App(Tm, Tm)
   Add(Tm, Tm)
@@ -30,7 +30,7 @@ fn wrap_paren(need_paren : Bool, s : String) -> String {
 }
 
 ///|
-fn Ty::pretty_prec(self : Ty, outer_prec : Int) -> String {
+fn Ty::pretty_prec(self : Ty, outer_prec : Int32) -> String {
   match self {
     NatTy => "Nat"
     Arrow(left, right) => {
@@ -42,17 +42,17 @@ fn Ty::pretty_prec(self : Ty, outer_prec : Int) -> String {
 }
 
 ///|
-impl Show for Ty with to_string(self) {
+impl Show for Ty with fn to_string(self) {
   self.pretty_prec(0)
 }
 
 ///|
-impl Show for Ty with output(self, logger) {
+impl Show for Ty with fn output(self, logger) {
   logger.write_string(self.to_string())
 }
 
 ///|
-fn pretty_var_name(depth : Int, index : Int) -> String {
+fn pretty_var_name(depth : Int32, index : Int32) -> String {
   if index < depth {
     "x\{depth - 1 - index}"
   } else {
@@ -61,7 +61,7 @@ fn pretty_var_name(depth : Int, index : Int) -> String {
 }
 
 ///|
-fn Tm::pretty_prec(self : Tm, depth : Int, outer_prec : Int) -> String {
+fn Tm::pretty_prec(self : Tm, depth : Int32, outer_prec : Int32) -> String {
   match self {
     Tm::Var(index) => pretty_var_name(depth, index)
     Lit(n) => n.to_string()
@@ -89,12 +89,12 @@ fn Tm::pretty_prec(self : Tm, depth : Int, outer_prec : Int) -> String {
 }
 
 ///|
-impl Show for Tm with to_string(self) {
+impl Show for Tm with fn to_string(self) {
   self.pretty_prec(0, 0)
 }
 
 ///|
-impl Show for Tm with output(self, logger) {
+impl Show for Tm with fn output(self, logger) {
   logger.write_string(self.to_string())
 }
 
@@ -142,7 +142,7 @@ fn den_to_ctx(value : DenValue[Tm]) -> Ctx? {
 }
 
 ///|
-fn lookup_ctx(ctx : Ctx, index : Int) -> Ty? {
+fn lookup_ctx(ctx : Ctx, index : Int32) -> Ty? {
   guard index >= 0 else { None }
   match (ctx, index) {
     (CtxNil, _) => None
@@ -179,7 +179,7 @@ fn infer_type(ctx : Ctx, tm : Tm) -> Ty? {
 
 ///|
 enum EvalValue {
-  VNat(Int)
+  VNat(Int32)
   VClos(Ty, Tm, Array[EvalValue])
 }
 
@@ -193,12 +193,12 @@ fn EvalValue::pretty(self : EvalValue) -> String {
 }
 
 ///|
-impl Show for EvalValue with to_string(self) {
+impl Show for EvalValue with fn to_string(self) {
   self.pretty()
 }
 
 ///|
-impl Show for EvalValue with output(self, logger) {
+impl Show for EvalValue with fn output(self, logger) {
   logger.write_string(self.to_string())
 }
 
@@ -270,7 +270,7 @@ fn tm_has_arith(tm : Tm) -> Bool {
 }
 
 ///|
-fn sample_ty_den(size : Int, rs : @splitmix.RandomState) -> DenValue[Tm] {
+fn sample_ty_den(size : Int32, rs : @splitmix.RandomState) -> DenValue[Tm] {
   if size <= 0 || rs.next_positive_int() % 3 == 0 {
     DenCtor("NatTy", [])
   } else {

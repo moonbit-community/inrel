@@ -1,7 +1,7 @@
 ///|
 fn mk_env(
-  x_to_u : @ihashmap.HashMap[String, Int],
-  u_to_name : @ihashmap.HashMap[Int, String],
+  x_to_u : @ihashmap.HashMap[String, Int32],
+  u_to_name : @ihashmap.HashMap[Int32, String],
 ) -> HypothesisEmitEnv {
   {
     r_name: "bst",
@@ -15,16 +15,16 @@ fn mk_env(
 
 ///|
 test "emit_hypotheses: all fixed hypothesis emits decidable guard" {
-  let constraints : Map[Int, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = {}
   constraints[0] = @unify.range_fixed()
   constraints[1] = @unify.range_fixed()
   let st = @unify.UnifyState::new(constraints, [0, 1])
 
-  let vars : @ihashmap.HashMap[String, Int] = @ihashmap.HashMap::from_array([
+  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap::from_array([
     ("x", 0),
     ("hi", 1),
   ])
-  let names : @ihashmap.HashMap[Int, String] = @ihashmap.HashMap::from_array([
+  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap::from_array([
     (0, "x"),
     (1, "hi"),
   ])
@@ -50,17 +50,17 @@ test "emit_hypotheses: all fixed hypothesis emits decidable guard" {
 
 ///|
 test "emit_hypotheses: single undef uses arbitraryST and resolves links from unify" {
-  let constraints : Map[Int, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = {}
   constraints[0] = @unify.range_fixed()
   constraints[1] = @unify.range_link(0)
   constraints[2] = @unify.range_undef(@spec.ty("Nat"))
   let st = @unify.UnifyState::new(constraints, [0, 1, 2])
 
-  let vars : @ihashmap.HashMap[String, Int] = @ihashmap.HashMap::from_array([
+  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap::from_array([
     ("lo", 1),
     ("x", 2),
   ])
-  let names : @ihashmap.HashMap[Int, String] = @ihashmap.HashMap::from_array([
+  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap::from_array([
     (0, "in1"),
     (1, "lo"),
     (2, "x"),
@@ -86,18 +86,18 @@ test "emit_hypotheses: single undef uses arbitraryST and resolves links from uni
 
 ///|
 test "emit_hypotheses: recursive RelCall with one undef emits aux call" {
-  let constraints : Map[Int, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = {}
   constraints[0] = @unify.range_fixed()
   constraints[1] = @unify.range_fixed()
   constraints[2] = @unify.range_undef(@spec.ty("Tree"))
   let st = @unify.UnifyState::new(constraints, [0, 1, 2])
 
-  let vars : @ihashmap.HashMap[String, Int] = @ihashmap.HashMap::from_array([
+  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap::from_array([
     ("lo", 0),
     ("hi", 1),
     ("t", 2),
   ])
-  let names : @ihashmap.HashMap[Int, String] = @ihashmap.HashMap::from_array([
+  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap::from_array([
     (0, "lo"),
     (1, "hi"),
     (2, "t"),
@@ -129,18 +129,18 @@ test "emit_hypotheses: recursive RelCall with one undef emits aux call" {
 
 ///|
 test "emit_hypotheses: multiple undef prefers recursive final call" {
-  let constraints : Map[Int, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = {}
   constraints[0] = @unify.range_undef(@spec.ty("Nat"))
   constraints[1] = @unify.range_undef(@spec.ty("Nat"))
   constraints[2] = @unify.range_undef(@spec.ty("Tree"))
   let st = @unify.UnifyState::new(constraints, [0, 1, 2])
 
-  let vars : @ihashmap.HashMap[String, Int] = @ihashmap.HashMap::from_array([
+  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap::from_array([
     ("lo", 0),
     ("hi", 1),
     ("t", 2),
   ])
-  let names : @ihashmap.HashMap[Int, String] = @ihashmap.HashMap::from_array([
+  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap::from_array([
     (0, "lo"),
     (1, "hi"),
     (2, "t"),

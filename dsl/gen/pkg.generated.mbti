@@ -41,21 +41,15 @@ pub(all) suberror GenRuntimeError {
 pub(all) enum BindFlavor {
   Do
   DoM
-}
-pub impl Eq for BindFlavor
-pub impl ToJson for BindFlavor
-pub impl @debug.Debug for BindFlavor
+} derive(Eq, ToJson, @debug.Debug)
 
 pub(all) enum BindSourceAst {
   Arbitrary
   ArbitraryST(String, ExprAst)
   RecursiveCall(String, Array[ExprAst])
   Expr(String)
-}
-pub impl Eq for BindSourceAst
+} derive(Eq, ToJson, @debug.Debug)
 pub impl Show for BindSourceAst
-pub impl ToJson for BindSourceAst
-pub impl @debug.Debug for BindSourceAst
 
 pub(all) struct BoundedGeneratorAst {
   aux_name : String
@@ -64,21 +58,15 @@ pub(all) struct BoundedGeneratorAst {
   succ_size_var : String
   zero_case : GenNode
   succ_case : GenNode
-}
+} derive(Eq, ToJson, @debug.Debug)
 pub fn BoundedGeneratorAst::to_paper_string(Self) -> String
-pub impl Eq for BoundedGeneratorAst
 pub impl Show for BoundedGeneratorAst
-pub impl ToJson for BoundedGeneratorAst
-pub impl @debug.Debug for BoundedGeneratorAst
 
 pub(all) struct CompileOptions {
   aux_name : String
   size_var : String
   succ_size_var : String
-}
-pub impl Eq for CompileOptions
-pub impl Show for CompileOptions
-pub impl ToJson for CompileOptions
+} derive(Eq, Show, ToJson)
 
 pub(all) struct DenCallCase[T] {
   name : String
@@ -92,7 +80,7 @@ pub(all) struct DenCtorCase[T] {
 }
 
 pub(all) enum DenValue[T] {
-  DenInt(Int)
+  DenInt(Int32)
   DenBool(Bool)
   DenString(String)
   DenOut(T)
@@ -104,7 +92,7 @@ pub(all) struct DenotationEnv[T] {
   use_ctor : (String, Array[DenValue[T]]) -> DenValue[T]? raise GenRuntimeError
   split_ctor : (DenValue[T], String) -> Array[DenValue[T]]? raise GenRuntimeError
   call : (String, Array[DenValue[T]]) -> DenValue[T]? raise GenRuntimeError
-  arbitrary : (String, @spec.TypeRef?, Int, @splitmix.RandomState) -> DenValue[T]? raise GenRuntimeError
+  arbitrary : (String, @spec.TypeRef?, Int32, @splitmix.RandomState) -> DenValue[T]? raise GenRuntimeError
   eq : (DenValue[T], DenValue[T]) -> Bool raise GenRuntimeError
   to_output : (DenValue[T]) -> T? raise GenRuntimeError
 }
@@ -112,12 +100,12 @@ pub(all) struct DenotationEnv[T] {
 pub(all) struct DenotationEnvBuilder[T] {
   ctor_cases : Array[DenCtorCase[T]]
   call_cases : Array[DenCallCase[T]]
-  arbitrary_case : (String, @spec.TypeRef?, Int, @splitmix.RandomState) -> DenValue[T]? raise GenRuntimeError
+  arbitrary_case : (String, @spec.TypeRef?, Int32, @splitmix.RandomState) -> DenValue[T]? raise GenRuntimeError
   eq_out : (T, T) -> Bool
   to_output : (DenValue[T]) -> T? raise GenRuntimeError
 }
 pub fn[T] DenotationEnvBuilder::build(Self[T]) -> DenotationEnv[T]
-pub fn[T] DenotationEnvBuilder::with_arbitrary(Self[T], (String, @spec.TypeRef?, Int, @splitmix.RandomState) -> DenValue[T]? raise GenRuntimeError) -> Self[T]
+pub fn[T] DenotationEnvBuilder::with_arbitrary(Self[T], (String, @spec.TypeRef?, Int32, @splitmix.RandomState) -> DenValue[T]? raise GenRuntimeError) -> Self[T]
 pub fn[T] DenotationEnvBuilder::with_call(Self[T], String, (Array[DenValue[T]]) -> DenValue[T]? raise GenRuntimeError) -> Self[T]
 pub fn[T] DenotationEnvBuilder::with_ctor(Self[T], String, (Array[DenValue[T]]) -> T?, (T) -> Array[DenValue[T]]?) -> Self[T]
 pub fn[T] DenotationEnvBuilder::with_eq_out(Self[T], (T, T) -> Bool) -> Self[T]
@@ -127,21 +115,18 @@ pub(all) enum ExprAst {
   Var(String)
   Ctor(String, Array[ExprAst])
   Call(String, Array[ExprAst])
-}
-pub impl Eq for ExprAst
+} derive(Eq, ToJson, @debug.Debug)
 pub impl Show for ExprAst
-pub impl ToJson for ExprAst
-pub impl @debug.Debug for ExprAst
 
 pub(all) struct Gen[T] {
   generator : MoonBitGenerator
   env : DenotationEnv[T]
 }
-pub fn[T] Gen::run(Self[T], Int, Array[DenValue[T]], @splitmix.RandomState) -> Array[T]? raise GenRuntimeError
-pub fn[T, In1 : RuntimeEncode] Gen::run1(Self[T], Int, In1, @splitmix.RandomState) -> T? raise GenRuntimeError
-pub fn[T, In1 : RuntimeEncode, In2 : RuntimeEncode] Gen::run2(Self[T], Int, In1, In2, @splitmix.RandomState) -> T? raise GenRuntimeError
-pub fn[T] Gen::run_one(Self[T], Int, Array[DenValue[T]], @splitmix.RandomState) -> T? raise GenRuntimeError
-pub fn[T] Gen::run_values(Self[T], Int, Array[DenValue[T]], @splitmix.RandomState) -> Array[DenValue[T]]? raise GenRuntimeError
+pub fn[T] Gen::run(Self[T], Int32, Array[DenValue[T]], @splitmix.RandomState) -> Array[T]? raise GenRuntimeError
+pub fn[T, In1 : RuntimeEncode] Gen::run1(Self[T], Int32, In1, @splitmix.RandomState) -> T? raise GenRuntimeError
+pub fn[T, In1 : RuntimeEncode, In2 : RuntimeEncode] Gen::run2(Self[T], Int32, In1, In2, @splitmix.RandomState) -> T? raise GenRuntimeError
+pub fn[T] Gen::run_one(Self[T], Int32, Array[DenValue[T]], @splitmix.RandomState) -> T? raise GenRuntimeError
+pub fn[T] Gen::run_values(Self[T], Int32, Array[DenValue[T]], @splitmix.RandomState) -> Array[DenValue[T]]? raise GenRuntimeError
 
 pub(all) enum GenNode {
   RetNone
@@ -150,94 +135,77 @@ pub(all) enum GenNode {
   MatchPattern(String, PatternAst, GenNode, GenNode)
   IfGuard(GuardAst, GenNode, GenNode)
   Bind(BindFlavor, String, BindSourceAst, GenNode)
-}
+} derive(Eq, ToJson, @debug.Debug)
 pub fn GenNode::to_paper_string(Self) -> String
-pub impl Eq for GenNode
 pub impl Show for GenNode
-pub impl ToJson for GenNode
-pub impl @debug.Debug for GenNode
 
 pub(all) enum GuardAst {
   Eq(ExprAst, ExprAst)
   Decidable(ExprAst)
-}
-pub impl Eq for GuardAst
+} derive(Eq, ToJson, @debug.Debug)
 pub impl Show for GuardAst
-pub impl ToJson for GuardAst
-pub impl @debug.Debug for GuardAst
 
 pub(all) struct HypothesisEmitEnv {
   r_name : String
   aux_name : String
-  in_pos : Array[Int]
-  out_pos : Array[Int]
-  x_to_u : @hashmap.HashMap[String, Int]
-  u_to_name : @hashmap.HashMap[Int, String]
-}
-pub impl Eq for HypothesisEmitEnv
+  in_pos : Array[Int32]
+  out_pos : Array[Int32]
+  x_to_u : @hashmap.HashMap[String, Int32]
+  u_to_name : @hashmap.HashMap[Int32, String]
+} derive(Eq)
 
 pub(all) struct MoonBitGenerator {
   aux_name : String
   input_names : Array[String]
-  output_arity : Int
+  output_arity : Int32
   var_types : @hashmap.HashMap[String, @spec.TypeRef]
   zero_case : GenNode
   succ_case : GenNode
 }
 pub fn[T] MoonBitGenerator::eval(Self, DenotationEnv[T]) -> Gen[T]
-pub fn MoonBitGenerator::run(Self, Int, Array[RuntimeValue], @splitmix.RandomState) -> Array[RuntimeValue]? raise GenRuntimeError
-pub fn[Out : RuntimeDecode] MoonBitGenerator::run_as(Self, Int, Array[RuntimeValue], @splitmix.RandomState) -> Array[Out]? raise GenRuntimeError
-pub fn MoonBitGenerator::run_one(Self, Int, Array[RuntimeValue], @splitmix.RandomState) -> RuntimeValue? raise GenRuntimeError
-pub fn[In1 : RuntimeEncode, Out : RuntimeDecode] MoonBitGenerator::run_one1(Self, Int, In1, @splitmix.RandomState) -> Out? raise GenRuntimeError
-pub fn[In1 : RuntimeEncode, In2 : RuntimeEncode, Out : RuntimeDecode] MoonBitGenerator::run_one2(Self, Int, In1, In2, @splitmix.RandomState) -> Out? raise GenRuntimeError
-pub fn[Out : RuntimeDecode] MoonBitGenerator::run_one_as(Self, Int, Array[RuntimeValue], @splitmix.RandomState) -> Out? raise GenRuntimeError
-pub fn MoonBitGenerator::run_seeded(Self, Int, Array[RuntimeValue], seed? : UInt64) -> Array[RuntimeValue]? raise GenRuntimeError
+pub fn MoonBitGenerator::run(Self, Int32, Array[RuntimeValue], @splitmix.RandomState) -> Array[RuntimeValue]? raise GenRuntimeError
+pub fn[Out : RuntimeDecode] MoonBitGenerator::run_as(Self, Int32, Array[RuntimeValue], @splitmix.RandomState) -> Array[Out]? raise GenRuntimeError
+pub fn MoonBitGenerator::run_one(Self, Int32, Array[RuntimeValue], @splitmix.RandomState) -> RuntimeValue? raise GenRuntimeError
+pub fn[In1 : RuntimeEncode, Out : RuntimeDecode] MoonBitGenerator::run_one1(Self, Int32, In1, @splitmix.RandomState) -> Out? raise GenRuntimeError
+pub fn[In1 : RuntimeEncode, In2 : RuntimeEncode, Out : RuntimeDecode] MoonBitGenerator::run_one2(Self, Int32, In1, In2, @splitmix.RandomState) -> Out? raise GenRuntimeError
+pub fn[Out : RuntimeDecode] MoonBitGenerator::run_one_as(Self, Int32, Array[RuntimeValue], @splitmix.RandomState) -> Out? raise GenRuntimeError
+pub fn MoonBitGenerator::run_seeded(Self, Int32, Array[RuntimeValue], seed? : UInt64) -> Array[RuntimeValue]? raise GenRuntimeError
 
 pub(all) enum PatternAst {
   PVar(String)
   PCtor(String, Array[PatternAst])
-}
-pub impl Eq for PatternAst
+} derive(Eq, ToJson, @debug.Debug)
 pub impl Show for PatternAst
-pub impl ToJson for PatternAst
-pub impl @debug.Debug for PatternAst
 
 pub(all) enum RuntimeValue {
-  RuntimeInt(Int)
+  RuntimeInt(Int32)
   RuntimeBool(Bool)
   RuntimeString(String)
   RuntimeCtor(String, Array[RuntimeValue])
   RuntimeTuple(Array[RuntimeValue])
-}
+} derive(Eq, ToJson, @debug.Debug)
 pub impl RuntimeDecode for RuntimeValue
 pub impl RuntimeEncode for RuntimeValue
-pub impl Eq for RuntimeValue
 pub impl Show for RuntimeValue
-pub impl ToJson for RuntimeValue
-pub impl @debug.Debug for RuntimeValue
 
 pub(all) struct WeightedCaseAst {
-  weight : Int
+  weight : Int32
   body : GenNode
-}
-pub impl Eq for WeightedCaseAst
-pub impl ToJson for WeightedCaseAst
-pub impl @debug.Debug for WeightedCaseAst
+} derive(Eq, ToJson, @debug.Debug)
 
 // Type aliases
 
 // Traits
 pub(open) trait RuntimeDecode {
-  from_runtime(RuntimeValue) -> Self?
+  fn from_runtime(RuntimeValue) -> Self?
 }
 pub impl RuntimeDecode for Bool
-pub impl RuntimeDecode for Int
+pub impl RuntimeDecode for Int32
 pub impl RuntimeDecode for String
 
 pub(open) trait RuntimeEncode {
-  to_runtime(Self) -> RuntimeValue
+  fn to_runtime(Self) -> RuntimeValue
 }
 pub impl RuntimeEncode for Bool
-pub impl RuntimeEncode for Int
+pub impl RuntimeEncode for Int32
 pub impl RuntimeEncode for String
-

@@ -32,9 +32,9 @@ pub struct ConstructorBody {
 /// Build a constructor body that will be lowered into `ConstructorSpec`.
 pub fn body(
   conclusion : Array[Term],
-  hypotheses? : Array[HypothesisSpec] = [],
+  hypotheses~ : Array[HypothesisSpec] = [],
 ) -> ConstructorBody {
-  { hypotheses, conclusion }
+  { hypotheses, conclusion, }
 }
 
 ///|
@@ -44,7 +44,7 @@ pub struct Scope {
 } derive(Eq, Show, ToJson)
 
 ///|
-pub fn Scope::at(self : Scope, index : Int) -> VarRef {
+pub fn Scope::at(self : Scope, index : Int32) -> VarRef {
   self.vars[index]
 }
 
@@ -132,7 +132,7 @@ pub fn constructor_scoped(
   name : String,
   binders : Array[BinderSpec],
   build : (Scope) -> ConstructorBody,
-  weight? : Int = 1,
+  weight~ : Int32 = 1,
 ) -> ConstructorSpec {
   let vars = binders.map(b => var_ref(b.name))
   let built = build({ vars, })
@@ -144,7 +144,7 @@ pub fn constructor_scoped(
 pub fn forall0(
   name : String,
   build : () -> ConstructorBody,
-  weight? : Int = 1,
+  weight~ : Int32 = 1,
 ) -> ConstructorSpec {
   let built = build()
   make_constructor(name, [], built.hypotheses, built.conclusion, weight~)
@@ -156,7 +156,7 @@ pub fn forall1(
   name : String,
   b1 : BinderSpec,
   build : (VarRef) -> ConstructorBody,
-  weight? : Int = 1,
+  weight~ : Int32 = 1,
 ) -> ConstructorSpec {
   let built = build(var_ref(b1.name))
   make_constructor(name, [b1], built.hypotheses, built.conclusion, weight~)
@@ -169,7 +169,7 @@ pub fn forall2(
   b1 : BinderSpec,
   b2 : BinderSpec,
   build : (VarRef, VarRef) -> ConstructorBody,
-  weight? : Int = 1,
+  weight~ : Int32 = 1,
 ) -> ConstructorSpec {
   let built = build(var_ref(b1.name), var_ref(b2.name))
   make_constructor(name, [b1, b2], built.hypotheses, built.conclusion, weight~)
@@ -183,7 +183,7 @@ pub fn forall3(
   b2 : BinderSpec,
   b3 : BinderSpec,
   build : (VarRef, VarRef, VarRef) -> ConstructorBody,
-  weight? : Int = 1,
+  weight~ : Int32 = 1,
 ) -> ConstructorSpec {
   let built = build(var_ref(b1.name), var_ref(b2.name), var_ref(b3.name))
   make_constructor(
@@ -203,7 +203,7 @@ pub fn forall4(
   b3 : BinderSpec,
   b4 : BinderSpec,
   build : (VarRef, VarRef, VarRef, VarRef) -> ConstructorBody,
-  weight? : Int = 1,
+  weight~ : Int32 = 1,
 ) -> ConstructorSpec {
   let built = build(
     var_ref(b1.name),

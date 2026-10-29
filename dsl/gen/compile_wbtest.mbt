@@ -14,7 +14,7 @@ using @spec {
   pred,
   type RelationSpec,
   rel,
-  v
+  v,
 }
 
 ///|

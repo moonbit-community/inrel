@@ -8,7 +8,7 @@ pub(all) struct CompileOptions {
 
 ///|
 pub fn default_compile_options() -> CompileOptions {
-  { aux_name: "aux_arb", size_var: "size", succ_size_var: "size'" }
+  { aux_name: "aux_arb", size_var: "size", succ_size_var: "size'", }
 }
 
 ///|
@@ -77,7 +77,7 @@ fn init_constructor_state(
 pub fn compile_constructor_case(
   rel : @spec.RelationSpec,
   ctor_spec : @spec.ConstructorSpec,
-  options? : CompileOptions = default_compile_options(),
+  options~ : CompileOptions = default_compile_options(),
 ) -> WeightedCaseAst? raise {
   guard ctor_spec.conclusion.length() == rel.params.length() else {
     fail_gen(
@@ -92,10 +92,11 @@ pub fn compile_constructor_case(
   for i in 0..<rel.params.length() {
     let lhs_range = term_to_range(ctor_spec.conclusion[i], x_to_u)
     let rhs_u = param_us[i]
-    let unify_result : Result[Unit, @unify.UnificationError] = try? st0.unify(
-      lhs_range,
-      @unify.range_link(rhs_u),
-    )
+    let unify_result : Result[Unit, @unify.UnificationError] = Ok(
+      st0.unify(lhs_range, @unify.range_link(rhs_u)),
+    ) catch {
+      e => Err(e)
+    }
     guard unify_result is Ok(_) else { return None }
   }
 
@@ -123,7 +124,7 @@ pub fn compile_constructor_case(
   let g_with_final = replace_tail_marker(g_after_hyp, marker_name, g_final)
   let g_with_eq = emit_equalities(st0, u_to_name, g_with_final)
   let g_with_pat = emit_patterns(st0, u_to_name, g_with_eq)
-  Some({ weight: ctor_spec.weight, body: g_with_pat })
+  Some({ weight: ctor_spec.weight, body: g_with_pat, })
 }
 
 ///|
@@ -133,7 +134,7 @@ pub fn compile_constructor_case(
 /// branch includes all inhabitable constructors.
 pub fn compile_relation_to_bounded_generator(
   rel : @spec.RelationSpec,
-  options? : CompileOptions = default_compile_options(),
+  options~ : CompileOptions = default_compile_options(),
 ) -> BoundedGeneratorAst raise {
   let succ_g : Array[WeightedCaseAst] = []
   let zero_g : Array[WeightedCaseAst] = []

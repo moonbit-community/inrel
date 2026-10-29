@@ -9,8 +9,8 @@
 pub(all) struct HypothesisEmitEnv {
   r_name : String
   aux_name : String
-  in_pos : Array[Int]
-  out_pos : Array[Int]
+  in_pos : Array[Int32]
+  out_pos : Array[Int32]
   x_to_u : @ihashmap.HashMap[String, @unify.Unknown]
   u_to_name : @ihashmap.HashMap[@unify.Unknown, String]
 } derive(Eq)
@@ -104,6 +104,6 @@ pub fn emit_hypotheses_from_unify(
   hypotheses : Array[@spec.HypothesisSpec],
   tail : GenNode,
 ) -> GenNode raise GenCompileError {
-  let ctx : HypothesisEmitContext = { state, env, tail }
+  let ctx : HypothesisEmitContext = { state, env, tail, }
   ctx.emit_hypotheses(hypotheses[:])
 }

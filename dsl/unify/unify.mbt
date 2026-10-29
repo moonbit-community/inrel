@@ -3,7 +3,7 @@
 ///
 /// Correspondence:
 /// - Paper Section 4.2 uses unknowns `u`.
-pub type Unknown = Int
+pub type Unknown = Int32
 
 ///|
 /// Unification failures (Section 4.4 / Figure 3).
@@ -110,7 +110,7 @@ fn next_unknown_id(us : Array[Unknown]) -> Unknown {
 pub fn UnifyState::new(
   constraints : Map[Unknown, Range],
   us : Array[Unknown],
-  next_unknown? : Unknown = next_unknown_id(us),
+  next_unknown~ : Unknown = next_unknown_id(us),
 ) -> UnifyState {
   {
     constraints,
@@ -168,7 +168,7 @@ pub fn UnifyState::record_pattern(
 /// Figure 2 action `fresh : Unify Unknown`.
 pub fn UnifyState::fresh_unknown(
   self : UnifyState,
-  ty? : @spec.TypeRef = fresh_placeholder_ty(),
+  ty~ : @spec.TypeRef = fresh_placeholder_ty(),
 ) -> Unknown {
   let u = self.next_unknown
   self.next_unknown += 1
@@ -339,17 +339,17 @@ pub fn UnifyState::match_aux(
 }
 
 ///|
-pub fn UnifyState::equality_count(self : UnifyState) -> Int {
+pub fn UnifyState::equality_count(self : UnifyState) -> Int32 {
   self.equalities.length()
 }
 
 ///|
-pub fn UnifyState::pattern_count(self : UnifyState) -> Int {
+pub fn UnifyState::pattern_count(self : UnifyState) -> Int32 {
   self.patterns.length()
 }
 
 ///|
-pub fn UnifyState::unknown_count(self : UnifyState) -> Int {
+pub fn UnifyState::unknown_count(self : UnifyState) -> Int32 {
   self.unknowns.length()
 }
 
