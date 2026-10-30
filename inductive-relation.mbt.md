@@ -27,7 +27,7 @@ type Sec1IntList = @list.List[Int32]
 ///|
 fn insert_sorted(x : Int32, xs : Sec1IntList) -> Sec1IntList {
   match xs {
-    Empty => @list.cons(x, @list.empty())
+    Empty => @list.cons(x, @list.List([]))
     More(y, ..) if x <= y => @list.cons(x, xs)
     More(y, tail=ys) => @list.cons(y, insert_sorted(x, ys))
   }
@@ -89,7 +89,15 @@ fn is_bst(lo : Int32, hi : Int32, tree : BstTree) -> Bool {
 enum BstTree {
   Leaf
   Node(Int32, BstTree, BstTree)
-} derive(Eq, Debug, Show, @qc_core.Arbitrary)
+} derive(Eq, Debug, @qc_core.Arbitrary)
+
+///|
+impl Show for BstTree with fn output(self, logger) {
+  match self {
+    Leaf => logger.write_string("Leaf")
+    Node(n, left, right) => logger <+ "Node(\{n}, \{left}, \{right})"
+  }
+}
 ```
 
 在这一表述下，默认生成器的无效之处会变得比 `sorted + insert` 更明显。对于列表，我们至少还能想象「先生成后排序」这一类补救；但对于搜索树，根节点一旦落错区间，左右子树的可行空间就会立刻被破坏，而且这种破坏会在递归中层层放大。于是，`generate-and-test` 的症结不再只是「浪费了一些样本」，而是「生成器根本没有利用输入所提供的约束信息」。下面这段统计并不证明某个精确概率；它只是展示这样一个事实：在固定上下界之后，默认树生成器所命中的合法 BST 样本会很少，而大多数预算都用在了否定样本上。

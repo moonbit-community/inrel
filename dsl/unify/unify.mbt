@@ -11,7 +11,7 @@ pub suberror UnificationError {
   UnknownIdentifier(Unknown)
   MissingConstraint(Unknown)
   UnificationFailure(String)
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 fn[T] fail_unify(msg : String) -> T raise UnificationError {
@@ -27,7 +27,7 @@ fn[T] fail_unify(msg : String) -> T raise UnificationError {
 pub enum Pattern {
   PVar(Unknown)
   PCtor(String, Array[Pattern])
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 pub fn pattern_var(u : Unknown) -> Pattern {
@@ -55,7 +55,7 @@ pub enum Range {
   Fixed
   Link(Unknown)
   Ctor(String, Array[Range])
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 pub fn range_undef(ty : @spec.TypeRef) -> Range {
@@ -114,7 +114,7 @@ pub fn UnifyState::new(
 ) -> UnifyState {
   {
     constraints,
-    equalities: Set::new(),
+    equalities: Set([]),
     patterns: [],
     unknowns: Set::from_array(us),
     next_unknown,

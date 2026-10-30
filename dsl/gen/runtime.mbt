@@ -127,7 +127,8 @@ fn upsert_var_type(
 fn relation_var_types(
   rel : @spec.RelationSpec,
 ) -> @ihashmap.HashMap[String, @spec.TypeRef] raise GenCompileError {
-  let mut var_types : @ihashmap.HashMap[String, @spec.TypeRef] = @ihashmap.HashMap::new()
+  let mut var_types : @ihashmap.HashMap[String, @spec.TypeRef] = @ihashmap.HashMap([],
+  )
   rel.params.each(param => {
     var_types = upsert_var_type(var_types, param.name, param.ty)
   })
@@ -499,7 +500,7 @@ fn RuntimeExecContext::run_aux(
     )
   }
 
-  let mut env : @ihashmap.HashMap[String, RuntimeValue] = @ihashmap.HashMap::new()
+  let mut env : @ihashmap.HashMap[String, RuntimeValue] = @ihashmap.HashMap([])
   for i, name in self.generator.input_names {
     env = env.add(name, inputs[i])
   }
@@ -634,7 +635,7 @@ pub fn MoonBitGenerator::run_seeded(
   inputs : Array[RuntimeValue],
   seed~ : UInt64 = 37,
 ) -> Array[RuntimeValue]? raise GenRuntimeError {
-  self.run(size, inputs, @splitmix.new(seed~))
+  self.run(size, inputs, @splitmix.RandomState(seed~))
 }
 
 ///|

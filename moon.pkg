@@ -1,6 +1,4 @@
 import {
-  "CAIMEOX/inrel/dsl/spec",
-  "CAIMEOX/inrel/dsl/gen",
   "moonbitlang/core/list",
   "moonbitlang/quickcheck" @qc,
   "moonbitlang/core/quickcheck" @qc_core,

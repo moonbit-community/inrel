@@ -62,12 +62,24 @@ pub fn var_ref(String) -> VarRef
 pub struct BinderSpec {
   name : String
   ty : TypeRef
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn BinderSpec::equal(Self, Self) -> Bool
+pub fn BinderSpec::not_equal(Self, Self) -> Bool
+pub fn BinderSpec::output(Self, &Logger) -> Unit
+pub fn BinderSpec::to_json(Self) -> Json
+pub fn BinderSpec::to_string(Self) -> String
+pub impl Show for BinderSpec
 
 pub struct ConstructorBody {
   hypotheses : Array[HypothesisSpec]
   conclusion : Array[Term]
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn ConstructorBody::equal(Self, Self) -> Bool
+pub fn ConstructorBody::not_equal(Self, Self) -> Bool
+pub fn ConstructorBody::output(Self, &Logger) -> Unit
+pub fn ConstructorBody::to_json(Self) -> Json
+pub fn ConstructorBody::to_string(Self) -> String
+pub impl Show for ConstructorBody
 
 pub struct ConstructorSpec {
   name : String
@@ -75,23 +87,47 @@ pub struct ConstructorSpec {
   hypotheses : Array[HypothesisSpec]
   conclusion : Array[Term]
   weight : Int32
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn ConstructorSpec::equal(Self, Self) -> Bool
+pub fn ConstructorSpec::not_equal(Self, Self) -> Bool
+pub fn ConstructorSpec::output(Self, &Logger) -> Unit
+pub fn ConstructorSpec::to_json(Self) -> Json
+pub fn ConstructorSpec::to_string(Self) -> String
+pub impl Show for ConstructorSpec
 
 pub enum HypothesisSpec {
   RelCall(String, Array[Term])
   Predicate(String, Array[Term])
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn HypothesisSpec::equal(Self, Self) -> Bool
+pub fn HypothesisSpec::not_equal(Self, Self) -> Bool
+pub fn HypothesisSpec::output(Self, &Logger) -> Unit
+pub fn HypothesisSpec::to_json(Self) -> Json
+pub fn HypothesisSpec::to_string(Self) -> String
+pub impl Show for HypothesisSpec
 
 pub enum ParamMode {
   In
   Out
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn ParamMode::equal(Self, Self) -> Bool
+pub fn ParamMode::not_equal(Self, Self) -> Bool
+pub fn ParamMode::output(Self, &Logger) -> Unit
+pub fn ParamMode::to_json(Self) -> Json
+pub fn ParamMode::to_string(Self) -> String
+pub impl Show for ParamMode
 
 pub struct ParamSpec {
   name : String
   ty : TypeRef
   mode : ParamMode
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn ParamSpec::equal(Self, Self) -> Bool
+pub fn ParamSpec::not_equal(Self, Self) -> Bool
+pub fn ParamSpec::output(Self, &Logger) -> Unit
+pub fn ParamSpec::to_json(Self) -> Json
+pub fn ParamSpec::to_string(Self) -> String
+pub impl Show for ParamSpec
 
 pub struct RelationSpec {
   name : String
@@ -99,35 +135,64 @@ pub struct RelationSpec {
   constructors : Array[ConstructorSpec]
 } derive(Eq, ToJson)
 pub fn RelationSpec::arity(Self) -> Int32
+pub fn RelationSpec::equal(Self, Self) -> Bool
 pub fn RelationSpec::input_positions(Self) -> Array[Int32]
+pub fn RelationSpec::not_equal(Self, Self) -> Bool
+pub fn RelationSpec::output(Self, &Logger) -> Unit
 pub fn RelationSpec::output_positions(Self) -> Array[Int32]
 pub fn RelationSpec::to_inductive_string(Self) -> String
+pub fn RelationSpec::to_json(Self) -> Json
+pub fn RelationSpec::to_string(Self) -> String
 pub impl Show for RelationSpec
 
 pub struct Scope {
   vars : Array[VarRef]
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 pub fn Scope::at(Self, Int32) -> VarRef
+pub fn Scope::equal(Self, Self) -> Bool
 pub fn Scope::find(Self, String) -> VarRef?
+pub fn Scope::not_equal(Self, Self) -> Bool
+pub fn Scope::output(Self, &Logger) -> Unit
 pub fn Scope::term(Self, String) -> Term?
 pub fn Scope::term_or_abort(Self, String) -> Term
+pub fn Scope::to_json(Self) -> Json
+pub fn Scope::to_string(Self) -> String
 pub fn Scope::v(Self, String) -> VarRef
+pub impl Show for Scope
 
 pub enum Term {
   Var(String)
   Ctor(String, Array[Term])
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn Term::equal(Self, Self) -> Bool
+pub fn Term::not_equal(Self, Self) -> Bool
+pub fn Term::output(Self, &Logger) -> Unit
+pub fn Term::to_json(Self) -> Json
+pub fn Term::to_string(Self) -> String
+pub impl Show for Term
 
 pub enum TypeRef {
   Named(String)
   App(String, Array[TypeRef])
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn TypeRef::equal(Self, Self) -> Bool
+pub fn TypeRef::not_equal(Self, Self) -> Bool
+pub fn TypeRef::output(Self, &Logger) -> Unit
+pub fn TypeRef::to_json(Self) -> Json
+pub fn TypeRef::to_string(Self) -> String
+pub impl Show for TypeRef
 
 pub struct VarRef {
   name : String
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn VarRef::equal(Self, Self) -> Bool
 pub fn VarRef::name(Self) -> String
+pub fn VarRef::not_equal(Self, Self) -> Bool
+pub fn VarRef::output(Self, &Logger) -> Unit
 pub fn VarRef::term(Self) -> Term
+pub fn VarRef::to_json(Self) -> Json
+pub fn VarRef::to_string(Self) -> String
+pub impl Show for VarRef
 
 // Type aliases
 

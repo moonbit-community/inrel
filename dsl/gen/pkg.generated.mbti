@@ -42,6 +42,10 @@ pub(all) enum BindFlavor {
   Do
   DoM
 } derive(Eq, ToJson, @debug.Debug)
+pub fn BindFlavor::equal(Self, Self) -> Bool
+pub fn BindFlavor::not_equal(Self, Self) -> Bool
+pub fn BindFlavor::to_json(Self) -> Json
+pub fn BindFlavor::to_repr(Self) -> @debug.Repr
 
 pub(all) enum BindSourceAst {
   Arbitrary
@@ -49,6 +53,12 @@ pub(all) enum BindSourceAst {
   RecursiveCall(String, Array[ExprAst])
   Expr(String)
 } derive(Eq, ToJson, @debug.Debug)
+pub fn BindSourceAst::equal(Self, Self) -> Bool
+pub fn BindSourceAst::not_equal(Self, Self) -> Bool
+pub fn BindSourceAst::output(Self, &Logger) -> Unit
+pub fn BindSourceAst::to_json(Self) -> Json
+pub fn BindSourceAst::to_repr(Self) -> @debug.Repr
+pub fn BindSourceAst::to_string(Self) -> String
 pub impl Show for BindSourceAst
 
 pub(all) struct BoundedGeneratorAst {
@@ -59,14 +69,26 @@ pub(all) struct BoundedGeneratorAst {
   zero_case : GenNode
   succ_case : GenNode
 } derive(Eq, ToJson, @debug.Debug)
+pub fn BoundedGeneratorAst::equal(Self, Self) -> Bool
+pub fn BoundedGeneratorAst::not_equal(Self, Self) -> Bool
+pub fn BoundedGeneratorAst::output(Self, &Logger) -> Unit
+pub fn BoundedGeneratorAst::to_json(Self) -> Json
 pub fn BoundedGeneratorAst::to_paper_string(Self) -> String
+pub fn BoundedGeneratorAst::to_repr(Self) -> @debug.Repr
+pub fn BoundedGeneratorAst::to_string(Self) -> String
 pub impl Show for BoundedGeneratorAst
 
 pub(all) struct CompileOptions {
   aux_name : String
   size_var : String
   succ_size_var : String
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn CompileOptions::equal(Self, Self) -> Bool
+pub fn CompileOptions::not_equal(Self, Self) -> Bool
+pub fn CompileOptions::output(Self, &Logger) -> Unit
+pub fn CompileOptions::to_json(Self) -> Json
+pub fn CompileOptions::to_string(Self) -> String
+pub impl Show for CompileOptions
 
 pub(all) struct DenCallCase[T] {
   name : String
@@ -116,6 +138,12 @@ pub(all) enum ExprAst {
   Ctor(String, Array[ExprAst])
   Call(String, Array[ExprAst])
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ExprAst::equal(Self, Self) -> Bool
+pub fn ExprAst::not_equal(Self, Self) -> Bool
+pub fn ExprAst::output(Self, &Logger) -> Unit
+pub fn ExprAst::to_json(Self) -> Json
+pub fn ExprAst::to_repr(Self) -> @debug.Repr
+pub fn ExprAst::to_string(Self) -> String
 pub impl Show for ExprAst
 
 pub(all) struct Gen[T] {
@@ -136,13 +164,25 @@ pub(all) enum GenNode {
   IfGuard(GuardAst, GenNode, GenNode)
   Bind(BindFlavor, String, BindSourceAst, GenNode)
 } derive(Eq, ToJson, @debug.Debug)
+pub fn GenNode::equal(Self, Self) -> Bool
+pub fn GenNode::not_equal(Self, Self) -> Bool
+pub fn GenNode::output(Self, &Logger) -> Unit
+pub fn GenNode::to_json(Self) -> Json
 pub fn GenNode::to_paper_string(Self) -> String
+pub fn GenNode::to_repr(Self) -> @debug.Repr
+pub fn GenNode::to_string(Self) -> String
 pub impl Show for GenNode
 
 pub(all) enum GuardAst {
   Eq(ExprAst, ExprAst)
   Decidable(ExprAst)
 } derive(Eq, ToJson, @debug.Debug)
+pub fn GuardAst::equal(Self, Self) -> Bool
+pub fn GuardAst::not_equal(Self, Self) -> Bool
+pub fn GuardAst::output(Self, &Logger) -> Unit
+pub fn GuardAst::to_json(Self) -> Json
+pub fn GuardAst::to_repr(Self) -> @debug.Repr
+pub fn GuardAst::to_string(Self) -> String
 pub impl Show for GuardAst
 
 pub(all) struct HypothesisEmitEnv {
@@ -153,6 +193,8 @@ pub(all) struct HypothesisEmitEnv {
   x_to_u : @hashmap.HashMap[String, Int32]
   u_to_name : @hashmap.HashMap[Int32, String]
 } derive(Eq)
+pub fn HypothesisEmitEnv::equal(Self, Self) -> Bool
+pub fn HypothesisEmitEnv::not_equal(Self, Self) -> Bool
 
 pub(all) struct MoonBitGenerator {
   aux_name : String
@@ -175,6 +217,12 @@ pub(all) enum PatternAst {
   PVar(String)
   PCtor(String, Array[PatternAst])
 } derive(Eq, ToJson, @debug.Debug)
+pub fn PatternAst::equal(Self, Self) -> Bool
+pub fn PatternAst::not_equal(Self, Self) -> Bool
+pub fn PatternAst::output(Self, &Logger) -> Unit
+pub fn PatternAst::to_json(Self) -> Json
+pub fn PatternAst::to_repr(Self) -> @debug.Repr
+pub fn PatternAst::to_string(Self) -> String
 pub impl Show for PatternAst
 
 pub(all) enum RuntimeValue {
@@ -184,6 +232,14 @@ pub(all) enum RuntimeValue {
   RuntimeCtor(String, Array[RuntimeValue])
   RuntimeTuple(Array[RuntimeValue])
 } derive(Eq, ToJson, @debug.Debug)
+pub fn RuntimeValue::equal(Self, Self) -> Bool
+pub fn RuntimeValue::from_runtime(Self) -> Self?
+pub fn RuntimeValue::not_equal(Self, Self) -> Bool
+pub fn RuntimeValue::output(Self, &Logger) -> Unit
+pub fn RuntimeValue::to_json(Self) -> Json
+pub fn RuntimeValue::to_repr(Self) -> @debug.Repr
+pub fn RuntimeValue::to_runtime(Self) -> Self
+pub fn RuntimeValue::to_string(Self) -> String
 pub impl RuntimeDecode for RuntimeValue
 pub impl RuntimeEncode for RuntimeValue
 pub impl Show for RuntimeValue
@@ -192,6 +248,10 @@ pub(all) struct WeightedCaseAst {
   weight : Int32
   body : GenNode
 } derive(Eq, ToJson, @debug.Debug)
+pub fn WeightedCaseAst::equal(Self, Self) -> Bool
+pub fn WeightedCaseAst::not_equal(Self, Self) -> Bool
+pub fn WeightedCaseAst::to_json(Self) -> Json
+pub fn WeightedCaseAst::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

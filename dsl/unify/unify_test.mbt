@@ -1,6 +1,6 @@
 ///|
 test "unify state actions mirror figure 2 primitives" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_fixed()
   constraints[1] = @unify.range_undef(@spec.ty("Tree"))
   let st = @unify.UnifyState::new(constraints, [0, 1])
@@ -12,7 +12,7 @@ test "unify state actions mirror figure 2 primitives" {
 
   let fresh = st.fresh_unknown(ty=@spec.ty("Tree"))
 
-  inspect(st.lookup(1), content="Some(Link(0))")
+  inspect(display_option(st.lookup(1)), content="Some(Link(0))")
   inspect(st.equality_count(), content="1")
   inspect(st.pattern_count(), content="1")
   inspect(st.unknown_count(), content="3")
@@ -22,7 +22,7 @@ test "unify state actions mirror figure 2 primitives" {
 
 ///|
 test "figure3 unify handles unknown/unknown and unknown/ctor" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_undef(@spec.ty("Tree"))
   constraints[1] = @unify.range_ctor("Leaf", [])
   constraints[2] = @unify.range_undef(@spec.ty("Tree"))
@@ -34,7 +34,7 @@ test "figure3 unify handles unknown/unknown and unknown/ctor" {
     @unify.range_ctor("Node", [@unify.range_ctor("Leaf", [])]),
   )
 
-  inspect(st.lookup(0), content="Some(Link(1))")
+  inspect(display_option(st.lookup(0)), content="Some(Link(1))")
   assert_true(
     st.lookup(2) ==
     Some(@unify.range_ctor("Node", [@unify.range_ctor("Leaf", [])])),
@@ -43,7 +43,7 @@ test "figure3 unify handles unknown/unknown and unknown/ctor" {
 
 ///|
 test "figure3 unify_r covers fixed/fixed and fixed/ctor branches" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_fixed()
   constraints[1] = @unify.range_fixed()
   constraints[2] = @unify.range_fixed()
@@ -61,13 +61,13 @@ test "figure3 unify_r covers fixed/fixed and fixed/ctor branches" {
 
   inspect(st.equality_count(), content="1")
   inspect(st.pattern_count(), content="1")
-  inspect(st.lookup(0), content="Some(Link(1))")
-  inspect(st.lookup(4), content="Some(Fixed)")
+  inspect(display_option(st.lookup(0)), content="Some(Link(1))")
+  inspect(display_option(st.lookup(4)), content="Some(Fixed)")
 }
 
 ///|
 test "figure3 unify_c succeeds on aligned ctors and fails on mismatch" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_undef(@spec.ty("Tree"))
   constraints[1] = @unify.range_undef(@spec.ty("Tree"))
   let st = @unify.UnifyState::new(constraints, [0, 1])
@@ -91,7 +91,7 @@ test "figure3 unify_c succeeds on aligned ctors and fails on mismatch" {
 
 ///|
 test "figure3 unify_rc follows links and detects ctor clashes" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_link(1)
   constraints[1] = @unify.range_undef(@spec.ty("Tree"))
   constraints[2] = @unify.range_ctor("Leaf", [])
@@ -117,7 +117,7 @@ test "figure3 unify_rc follows links and detects ctor clashes" {
 
 ///|
 test "figure3 match_range records pattern and drives match_aux updates" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_fixed()
   constraints[1] = @unify.range_undef(@spec.ty("Nat"))
   let st = @unify.UnifyState::new(constraints, [0, 1])
@@ -125,12 +125,12 @@ test "figure3 match_range records pattern and drives match_aux updates" {
   try! st.match_range(0, "S", [@unify.range_link(1)])
 
   inspect(st.pattern_count(), content="1")
-  inspect(st.lookup(1), content="Some(Fixed)")
+  inspect(display_option(st.lookup(1)), content="Some(Fixed)")
 }
 
 ///|
 test "figure3 match_aux returns structured pattern and fixed-branch freshens" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_undef(@spec.ty("Tree"))
   constraints[1] = @unify.range_fixed()
   let st = @unify.UnifyState::new(constraints, [0, 1])
@@ -143,15 +143,15 @@ test "figure3 match_aux returns structured pattern and fixed-branch freshens" {
     p ==
     @unify.pattern_ctor("Wrap", [@unify.pattern_var(0), @unify.pattern_var(2)]),
   )
-  inspect(st.lookup(0), content="Some(Fixed)")
-  inspect(st.lookup(2), content="Some(Link(1))")
+  inspect(display_option(st.lookup(0)), content="Some(Fixed)")
+  inspect(display_option(st.lookup(2)), content="Some(Link(1))")
   inspect(st.equality_count(), content="1")
   inspect(st.unknown_count(), content="3")
 }
 
 ///|
 test "actions reject unknown ids not introduced by fresh" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_fixed()
   let st = @unify.UnifyState::new(constraints, [0])
 
@@ -174,4 +174,12 @@ test "actions reject unknown ids not introduced by fresh" {
   guard bad_update is Err(_) else { fail("Expected unknown-id error") }
   guard bad_eq is Err(_) else { fail("Expected unknown-id error") }
   guard bad_pattern is Err(_) else { fail("Expected unknown-id error") }
+}
+
+///|
+fn[T : Show] display_option(value : T?) -> String {
+  match value {
+    None => "None"
+    Some(value) => "Some(\{value})"
+  }
 }

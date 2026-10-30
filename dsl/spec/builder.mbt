@@ -4,7 +4,7 @@
 /// This is a frontend convenience wrapper and always lowers to `Term::Var`.
 pub struct VarRef {
   name : String
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 pub fn var_ref(name : String) -> VarRef {
@@ -26,7 +26,7 @@ pub fn VarRef::term(self : VarRef) -> Term {
 pub struct ConstructorBody {
   hypotheses : Array[HypothesisSpec]
   conclusion : Array[Term]
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 /// Build a constructor body that will be lowered into `ConstructorSpec`.
@@ -41,7 +41,7 @@ pub fn body(
 /// Scope object passed to scoped constructor builders.
 pub struct Scope {
   vars : Array[VarRef]
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 pub fn Scope::at(self : Scope, index : Int32) -> VarRef {

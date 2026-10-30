@@ -16,7 +16,7 @@ fn assert_bst_bounds(tree : RuntimeValue, lo : Int32, hi : Int32) -> Unit raise 
 enum Tree {
   Leaf
   Node(Int32, Tree, Tree)
-} derive(Eq, Show, Debug)
+} derive(Eq, Debug)
 
 ///|
 fn decode_tree(value : RuntimeValue) -> Tree? {
@@ -39,7 +39,7 @@ impl RuntimeDecode for Tree with fn from_runtime(value : RuntimeValue) {
 ///|
 test "runtime eval: complete depth=0 returns leaf in zero branch" {
   let runtime = try! compile_relation_to_moonbit_generator(complete_tree_spec())
-  guard runtime.run_one(0, [RuntimeInt(0)], @splitmix.new(seed=7))
+  guard runtime.run_one(0, [RuntimeInt(0)], @splitmix.RandomState(seed=7))
     is Some(RuntimeCtor("Leaf", [])) else {
     fail("expected Leaf")
   }
@@ -48,14 +48,14 @@ test "runtime eval: complete depth=0 returns leaf in zero branch" {
 ///|
 test "runtime eval: typed decode to moonbit Tree" {
   let runtime = try! compile_relation_to_moonbit_generator(complete_tree_spec())
-  let out : Tree? = runtime.run_one1(4, 2, @splitmix.new(seed=29))
+  let out : Tree? = runtime.run_one1(4, 2, @splitmix.RandomState(seed=29))
   guard out is Some(Node(_, _, _)) else { fail("expected typed Tree::Node") }
 }
 
 ///|
 test "runtime eval: complete depth>0 uses recursive node branch" {
   let runtime = try! compile_relation_to_moonbit_generator(complete_tree_spec())
-  guard runtime.run_one(4, [RuntimeInt(2)], @splitmix.new(seed=11))
+  guard runtime.run_one(4, [RuntimeInt(2)], @splitmix.RandomState(seed=11))
     is Some(RuntimeCtor("Node", [_x, _l, _r])) else {
     fail("expected Node for depth=2 in successor branch")
   }
@@ -66,7 +66,7 @@ test "runtime eval: nonempty generates node directly" {
   let runtime = try! compile_relation_to_moonbit_generator(
     nonempty_relation_spec(),
   )
-  guard runtime.run_one(3, [], @splitmix.new(seed=17))
+  guard runtime.run_one(3, [], @splitmix.RandomState(seed=17))
     is Some(RuntimeCtor("Node", [_x, _l, _r])) else {
     fail("expected Node from nonempty relation")
   }
@@ -79,7 +79,7 @@ test "runtime eval: bst generation respects bounds on all sampled trees" {
     guard runtime.run_one(
         5,
         [RuntimeInt(0), RuntimeInt(8)],
-        @splitmix.new(seed=seed.to_uint64()),
+        @splitmix.RandomState(seed=seed.to_uint64()),
       )
       is Some(tree) else {
       fail("bst generator returned None at seed \{seed}")
@@ -91,16 +91,16 @@ test "runtime eval: bst generation respects bounds on all sampled trees" {
 ///|
 test "runtime eval: run_one2 supports typed output decoding" {
   let runtime = try! compile_relation_to_moonbit_generator(bst_relation_spec())
-  let out : Tree? = runtime.run_one2(5, 0, 8, @splitmix.new(seed=42))
+  let out : Tree? = runtime.run_one2(5, 0, 8, @splitmix.RandomState(seed=42))
   guard out is Some(tree) else { fail("expected a generated tree") }
   assert_true(bst_tree_assert(tree, 0, 8))
-  let repeated : Tree? = runtime.run_one2(5, 0, 8, @splitmix.new(seed=42))
+  let repeated : Tree? = runtime.run_one2(
+    5,
+    0,
+    8,
+    @splitmix.RandomState(seed=42),
+  )
   assert_eq(out, repeated)
-}
-
-///|
-fn complete_tree_assert(tree : Tree) -> Bool {
-  complete_tree_depth(tree) is Some(_)
 }
 
 ///|
@@ -185,7 +185,7 @@ test "denotational eval: complete returns typed tree" {
     complete_tree_spec(),
     tree_denotation_env(),
   )
-  let out = gen.run1(4, 2, @splitmix.new(seed=29))
+  let out = gen.run1(4, 2, @splitmix.RandomState(seed=29))
   guard out is Some(Node(_, _, _)) else { fail("expected Node output") }
 }
 
@@ -196,7 +196,8 @@ test "denotational eval: bst keeps bounds with typed output" {
     tree_denotation_env(),
   )
   for seed in 1..<=25 {
-    guard gen.run2(4, 0, 8, @splitmix.new(seed=seed.to_uint64())) is Some(tree) else {
+    guard gen.run2(4, 0, 8, @splitmix.RandomState(seed=seed.to_uint64()))
+      is Some(tree) else {
       fail("bst denotational generator returned None at seed \{seed}")
     }
     assert_true(bst_tree_assert(tree, 0, 8))
@@ -207,7 +208,24 @@ test "denotational eval: bst keeps bounds with typed output" {
 ///|
 test "denotational eval: runtime bridge env returns runtime tree" {
   let gen = compile_relation_to_gen(complete_tree_spec(), tree_denotation_env())
-  guard gen.run1(10, 5, @splitmix.new(seed=7)) is Some(tree)
+  guard! gen.run1(10, 5, @splitmix.RandomState(seed=7)) is Some(tree)
   assert_eq(complete_tree_depth(tree), Some(5))
-  assert_eq(gen.run1(10, 5, @splitmix.new(seed=7)), Some(tree))
+  assert_eq(gen.run1(10, 5, @splitmix.RandomState(seed=7)), Some(tree))
+}
+
+///|
+pub extend Tree with Debug::{to_repr}
+
+///|
+pub extend Tree with Eq::{not_equal, equal}
+
+///|
+pub extend Tree with Show::{to_string, output}
+
+///|
+impl Show for Tree with fn output(self, logger) {
+  match self {
+    Leaf => logger.write_string("Leaf")
+    Node(n, left, right) => logger <+ "Node(\{n}, \{left}, \{right})"
+  }
 }

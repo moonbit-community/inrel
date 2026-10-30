@@ -7,7 +7,7 @@
 pub enum TypeRef {
   Named(String)
   App(String, Array[TypeRef])
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 pub fn ty(name : String) -> TypeRef {
@@ -29,7 +29,7 @@ pub fn type_app(name : String, args : Array[TypeRef]) -> TypeRef {
 pub enum Term {
   Var(String)
   Ctor(String, Array[Term])
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 pub fn v(name : String) -> Term {
@@ -50,7 +50,7 @@ pub fn term_ctor(name : String, args : Array[Term]) -> Term {
 pub enum ParamMode {
   In
   Out
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 pub fn mode_in() -> ParamMode {
@@ -68,7 +68,7 @@ pub struct ParamSpec {
   name : String
   ty : TypeRef
   mode : ParamMode
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 pub fn make_param(name : String, ty : TypeRef, mode : ParamMode) -> ParamSpec {
@@ -83,7 +83,7 @@ pub fn make_param(name : String, ty : TypeRef, mode : ParamMode) -> ParamSpec {
 pub struct BinderSpec {
   name : String
   ty : TypeRef
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 pub fn make_binder(name : String, ty : TypeRef) -> BinderSpec {
@@ -98,7 +98,7 @@ pub fn make_binder(name : String, ty : TypeRef) -> BinderSpec {
 pub enum HypothesisSpec {
   RelCall(String, Array[Term])
   Predicate(String, Array[Term])
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 pub fn hypothesis_rel_call(name : String, args : Array[Term]) -> HypothesisSpec {
@@ -130,7 +130,7 @@ pub struct ConstructorSpec {
   hypotheses : Array[HypothesisSpec]
   conclusion : Array[Term]
   weight : Int32
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 /// Whole inductive relation specification.
