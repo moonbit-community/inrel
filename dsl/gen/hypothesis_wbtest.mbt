@@ -15,16 +15,16 @@ fn mk_env(
 
 ///|
 test "emit_hypotheses: all fixed hypothesis emits decidable guard" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_fixed()
   constraints[1] = @unify.range_fixed()
   let st = @unify.UnifyState::new(constraints, [0, 1])
 
-  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap::from_array([
+  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap([
     ("x", 0),
     ("hi", 1),
   ])
-  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap::from_array([
+  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap([
     (0, "x"),
     (1, "hi"),
   ])
@@ -50,17 +50,17 @@ test "emit_hypotheses: all fixed hypothesis emits decidable guard" {
 
 ///|
 test "emit_hypotheses: single undef uses arbitraryST and resolves links from unify" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_fixed()
   constraints[1] = @unify.range_link(0)
   constraints[2] = @unify.range_undef(@spec.ty("Nat"))
   let st = @unify.UnifyState::new(constraints, [0, 1, 2])
 
-  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap::from_array([
+  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap([
     ("lo", 1),
     ("x", 2),
   ])
-  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap::from_array([
+  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap([
     (0, "in1"),
     (1, "lo"),
     (2, "x"),
@@ -81,23 +81,23 @@ test "emit_hypotheses: single undef uses arbitraryST and resolves links from uni
       #|ret (Some x)
     ),
   )
-  inspect(st.lookup(2), content="Some(Fixed)")
+  inspect(display_option(st.lookup(2)), content="Some(Fixed)")
 }
 
 ///|
 test "emit_hypotheses: recursive RelCall with one undef emits aux call" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_fixed()
   constraints[1] = @unify.range_fixed()
   constraints[2] = @unify.range_undef(@spec.ty("Tree"))
   let st = @unify.UnifyState::new(constraints, [0, 1, 2])
 
-  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap::from_array([
+  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap([
     ("lo", 0),
     ("hi", 1),
     ("t", 2),
   ])
-  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap::from_array([
+  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap([
     (0, "lo"),
     (1, "hi"),
     (2, "t"),
@@ -124,23 +124,23 @@ test "emit_hypotheses: recursive RelCall with one undef emits aux call" {
       #|ret (Some t)
     ),
   )
-  inspect(st.lookup(2), content="Some(Fixed)")
+  inspect(display_option(st.lookup(2)), content="Some(Fixed)")
 }
 
 ///|
 test "emit_hypotheses: multiple undef prefers recursive final call" {
-  let constraints : Map[Int32, @unify.Range] = {}
+  let constraints : Map[Int32, @unify.Range] = Map([])
   constraints[0] = @unify.range_undef(@spec.ty("Nat"))
   constraints[1] = @unify.range_undef(@spec.ty("Nat"))
   constraints[2] = @unify.range_undef(@spec.ty("Tree"))
   let st = @unify.UnifyState::new(constraints, [0, 1, 2])
 
-  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap::from_array([
+  let vars : @ihashmap.HashMap[String, Int32] = @ihashmap.HashMap([
     ("lo", 0),
     ("hi", 1),
     ("t", 2),
   ])
-  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap::from_array([
+  let names : @ihashmap.HashMap[Int32, String] = @ihashmap.HashMap([
     (0, "lo"),
     (1, "hi"),
     (2, "t"),
@@ -169,7 +169,15 @@ test "emit_hypotheses: multiple undef prefers recursive final call" {
       #|ret (Some t)
     ),
   )
-  inspect(st.lookup(0), content="Some(Fixed)")
-  inspect(st.lookup(1), content="Some(Fixed)")
-  inspect(st.lookup(2), content="Some(Fixed)")
+  inspect(display_option(st.lookup(0)), content="Some(Fixed)")
+  inspect(display_option(st.lookup(1)), content="Some(Fixed)")
+  inspect(display_option(st.lookup(2)), content="Some(Fixed)")
+}
+
+///|
+fn[T : Show] display_option(value : T?) -> String {
+  match value {
+    None => "None"
+    Some(value) => "Some(\{value})"
+  }
 }

@@ -8,7 +8,7 @@ enum Ty {
 enum Ctx {
   CtxNil
   CtxCons(Ty, Ctx)
-} derive(Eq, Show)
+} derive(Eq)
 
 ///|
 enum Tm {
@@ -565,7 +565,7 @@ test "integration: generate STLC well-typed lambda calculus ast" {
       guard gen.run_one(
           8,
           [DenInt(4), ctx_to_den(ctx), ty_to_den(ty)],
-          @splitmix.new(seed=seed.to_uint64()),
+          @splitmix.RandomState(seed=seed.to_uint64()),
         )
         is Some(tm) else {
         fail("generator returned None for ctx=\{ctx}, ty=\{ty}, seed=\{seed}")
@@ -616,7 +616,7 @@ test "evaluation: STLC well-typed closed terms never go wrong" {
       guard gen.run_one(
           9,
           [DenInt(5), ctx_to_den(CtxNil), ty_to_den(ty)],
-          @splitmix.new(seed=seed.to_uint64()),
+          @splitmix.RandomState(seed=seed.to_uint64()),
         )
         is Some(tm) else {
         fail("generator returned None for closed target ty=\{ty}, seed=\{seed}")
@@ -629,3 +629,35 @@ test "evaluation: STLC well-typed closed terms never go wrong" {
     }
   }
 }
+
+///|
+pub extend Ctx with Eq::{not_equal, equal}
+
+///|
+pub extend Ctx with Show::{to_string, output}
+
+///|
+pub extend Tm with Eq::{not_equal, equal}
+
+///|
+pub extend Ty with Debug::{to_repr}
+
+///|
+pub extend Ty with Eq::{not_equal, equal}
+
+///|
+impl Show for Ctx with fn output(self, logger) {
+  match self {
+    CtxNil => logger.write_string("CtxNil")
+    CtxCons(ty, ctx) => logger <+ "CtxCons(\{ty}, \{ctx})"
+  }
+}
+
+///|
+extend Ty with Show::{to_string}
+
+///|
+extend Tm with Show::{to_string}
+
+///|
+extend EvalValue with Show::{to_string}

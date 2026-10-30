@@ -24,20 +24,38 @@ pub suberror UnificationError {
   UnknownIdentifier(Int32)
   MissingConstraint(Int32)
   UnificationFailure(String)
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn UnificationError::equal(Self, Self) -> Bool
+pub fn UnificationError::not_equal(Self, Self) -> Bool
+pub fn UnificationError::output(Self, &Logger) -> Unit
+pub fn UnificationError::to_json(Self) -> Json
+pub fn UnificationError::to_string(Self) -> String
+pub impl Show for UnificationError
 
 // Types and methods
 pub enum Pattern {
   PVar(Int32)
   PCtor(String, Array[Pattern])
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn Pattern::equal(Self, Self) -> Bool
+pub fn Pattern::not_equal(Self, Self) -> Bool
+pub fn Pattern::output(Self, &Logger) -> Unit
+pub fn Pattern::to_json(Self) -> Json
+pub fn Pattern::to_string(Self) -> String
+pub impl Show for Pattern
 
 pub enum Range {
   Undef(@spec.TypeRef)
   Fixed
   Link(Int32)
   Ctor(String, Array[Range])
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
+pub fn Range::equal(Self, Self) -> Bool
+pub fn Range::not_equal(Self, Self) -> Bool
+pub fn Range::output(Self, &Logger) -> Unit
+pub fn Range::to_json(Self) -> Json
+pub fn Range::to_string(Self) -> String
+pub impl Show for Range
 
 pub struct UnifyState {
   constraints : Map[Int32, Range]

@@ -4,7 +4,7 @@ pub(all) struct CompileOptions {
   aux_name : String
   size_var : String
   succ_size_var : String
-} derive(Eq, Show, ToJson)
+} derive(Eq, ToJson)
 
 ///|
 pub fn default_compile_options() -> CompileOptions {
@@ -36,11 +36,13 @@ fn init_constructor_state(
   @ihashmap.HashMap[String, @unify.Unknown],
   @ihashmap.HashMap[@unify.Unknown, String],
 ) {
-  let kappa : Map[@unify.Unknown, @unify.Range] = {}
+  let kappa : Map[@unify.Unknown, @unify.Range] = Map([])
   let us : Array[@unify.Unknown] = []
   let param_us : Array[@unify.Unknown] = []
-  let mut x_to_u : @ihashmap.HashMap[String, @unify.Unknown] = @ihashmap.HashMap::new()
-  let mut u_to_name : @ihashmap.HashMap[@unify.Unknown, String] = @ihashmap.HashMap::new()
+  let mut x_to_u : @ihashmap.HashMap[String, @unify.Unknown] = @ihashmap.HashMap([],
+  )
+  let mut u_to_name : @ihashmap.HashMap[@unify.Unknown, String] = @ihashmap.HashMap([],
+  )
 
   let mut next_u = 0
   for p in rel.params {

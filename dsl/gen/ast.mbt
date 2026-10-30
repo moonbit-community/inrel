@@ -82,7 +82,7 @@ pub(all) struct BoundedGeneratorAst {
 
 ///|
 fn indent(level : Int32) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for _ in 0..<level {
     sb.write_string("  ")
   }

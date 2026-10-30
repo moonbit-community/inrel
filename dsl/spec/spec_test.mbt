@@ -9,8 +9,8 @@ test "relation mode partition follows in/out split" {
     [],
   )
   inspect(rel.arity(), content="2")
-  inspect(rel.input_positions(), content="[0]")
-  inspect(rel.output_positions(), content="[1]")
+  debug_inspect(rel.input_positions(), content="[0]")
+  debug_inspect(rel.output_positions(), content="[1]")
 }
 
 ///|

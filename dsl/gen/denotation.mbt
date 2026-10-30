@@ -531,7 +531,8 @@ fn[T] DenotationExec::run_aux(
     )
   }
 
-  let mut env_values : @ihashmap.HashMap[String, DenValue[T]] = @ihashmap.HashMap::new()
+  let mut env_values : @ihashmap.HashMap[String, DenValue[T]] = @ihashmap.HashMap([],
+  )
   self.generator.input_names
   .iter2()
   .each((i, name) => env_values = env_values.add(name, inputs[i]))
